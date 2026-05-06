@@ -154,16 +154,16 @@ def dashboard():
 
     active_today = User.query.filter(User.last_login >= day_start).count()
 
-    # ── Leads updated today (status changes logged as Activity) ───────────
-    updates_query = (
+    # ── Leads added today (status changes logged as Activity) ───────────
+    add_query = (
         Activity.query
-        .filter(Activity.timestamp >= day_start, Activity.lead_id != None)
+        .filter(Activity.timestamp >= day_start, Activity.action.startswith("Created lead"))
     )
     if selected_user_id:
-        updates_query = updates_query.filter(Activity.user_id == selected_user_id)
-    leads_updated_today = updates_query.count()
-    lead_updates = (
-        updates_query
+        add_query = add_query.filter(Activity.user_id == selected_user_id)
+    leads_added_today = add_query.count()
+    lead_additions = (
+        add_query
         .order_by(Activity.timestamp.desc())
         .limit(15).all()
     )
@@ -198,8 +198,8 @@ def dashboard():
         deals_done=deals_done,
         overdue_count=overdue_count,
         followups_done=followups_done,
-        leads_updated_today=leads_updated_today,
-        lead_updates=lead_updates,
+        leads_added_today=leads_added_today,
+        lead_additions=lead_additions,
         recent_activities=recent_activities,
         users=users,
         user_stats=user_stats,
@@ -319,18 +319,16 @@ def team():
                     Activity.action.like("Follow-up done%"))
             .count()
         )
-        leads_updated_today = (
-            Activity.query
-            .filter(Activity.user_id == user.id,
-                    Activity.timestamp >= day_start,
-                    Activity.lead_id != None)
+        leads_added_today = (
+            Lead.query
+            .filter(Lead.assigned_to == user.id,
+                    Lead.created_at >= day_start)
             .count()
         )
-        leads_updated_week = (
-            Activity.query
-            .filter(Activity.user_id == user.id,
-                    Activity.timestamp >= week_ago,
-                    Activity.lead_id != None)
+        leads_added_week = (
+            Lead.query
+            .filter(Lead.assigned_to == user.id,
+                    Lead.created_at >= week_ago)
             .count()
         )
         pending_followup = (
@@ -358,8 +356,8 @@ def team():
             "deals_done": deals_done,
             "overdue": overdue,
             "followups_done": followups_done,
-            "leads_updated_today": leads_updated_today,
-            "leads_updated_week": leads_updated_week,
+            "leads_added_today": leads_added_today,
+            "leads_added_week": leads_added_week,
             "pending_followup": pending_followup,
             "last_activity": last_activity,
             "conversion": conv,

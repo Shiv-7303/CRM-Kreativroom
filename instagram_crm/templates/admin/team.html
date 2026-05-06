@@ -26,7 +26,7 @@
           <th class="px-4 py-3 font-medium text-right text-red-600">Overdue</th>
           <th class="px-4 py-3 font-medium text-right text-blue-600">Pending F/U</th>
           <th class="px-4 py-3 font-medium text-right text-teal-600">F/U Done</th>
-          <th class="px-4 py-3 font-medium text-right text-amber-600">Updates Today</th>
+          <th class="px-4 py-3 font-medium text-right text-amber-600">Added Today</th>
           <th class="px-4 py-3 font-medium text-right">Last Activity</th>
         </tr>
       </thead>
@@ -58,10 +58,10 @@
           </td>
           
           <td class="px-4 py-3 text-right">
-            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold {% if row.leads_updated_today > 0 %}bg-amber-100 text-amber-800{% else %}bg-gray-100 text-gray-500{% endif %}">
-              {{ row.leads_updated_today }}
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold {% if row.leads_added_today > 0 %}bg-amber-100 text-amber-800{% else %}bg-gray-100 text-gray-500{% endif %}">
+              {{ row.leads_added_today }}
             </span>
-            <div class="text-[10px] text-gray-400 mt-0.5">{{ row.leads_updated_week }} this week</div>
+            <div class="text-[10px] text-gray-400 mt-0.5">{{ row.leads_added_week }} this week</div>
           </td>
           
           <td class="px-4 py-3 text-right text-gray-500 text-xs">
