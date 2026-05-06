@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}Analytics — ReachFlow{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">
+      {% if selected_user %}Stats for {{ selected_user.email.split('@')[0] | title }}{% else %}Performance Stats{% endif %}
+    </h1>
+    <p class="text-sm text-gray-500 mt-1">
+      {% if selected_user %}Analytics for {{ selected_user.email }} &middot; {% endif %}Last 7 days &middot; {{ now.strftime('%d %b %Y, %H:%M') }}
+    </p>
+  </div>
+</div>
+
+{% set filter_action = url_for('admin.stats') %}
+{% include "_components/_user_filter.html" with context %}
+
+<div class="mb-8">
+  <h2 class="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">{% if selected_user %}All Time — {{ selected_user.email.split('@')[0] | title }}{% else %}All Time Overview{% endif %}</h2>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-5 flex flex-col items-center justify-center text-indigo-700">
+      <div class="text-3xl font-bold">{{ total_users }}</div>
+      <div class="text-xs font-medium mt-1">Total Users</div>
+    </div>
+    <a href="{{ url_for('admin.all_leads') }}" class="bg-blue-50 border border-blue-200 rounded-lg p-5 flex flex-col items-center justify-center text-blue-700 hover:bg-blue-100 transition">
+      <div class="text-3xl font-bold">{{ total_leads }}</div>
+      <div class="text-xs font-medium mt-1">Total Leads</div>
+    </a>
+    <a href="{{ url_for('admin.calls') }}" class="bg-green-50 border border-green-200 rounded-lg p-5 flex flex-col items-center justify-center text-green-700 hover:bg-green-100 transition">
+      <div class="text-3xl font-bold">{{ total_calls }}</div>
+      <div class="text-xs font-medium mt-1">Calls Booked</div>
+    </a>
+    <div class="bg-purple-50 border border-purple-200 rounded-lg p-5 flex flex-col items-center justify-center text-purple-700">
+      <div class="text-3xl font-bold">{{ conversion }}%</div>
+      <div class="text-xs font-medium mt-1">Conversion Rate</div>
+    </div>
+  </div>
+</div>
+
+<div class="mb-8">
+  <h2 class="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">{% if selected_user %}This Week — {{ selected_user.email.split('@')[0] | title }}{% else %}This Week{% endif %}</h2>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-5 flex flex-col items-center justify-center text-yellow-700">
+      <div class="text-3xl font-bold">{{ leads_this_week }}</div>
+      <div class="text-xs font-medium mt-1">New Leads</div>
+    </div>
+    <a href="{{ url_for('admin.calls') }}" class="bg-orange-50 border border-orange-200 rounded-lg p-5 flex flex-col items-center justify-center text-orange-700 hover:bg-orange-100 transition">
+      <div class="text-3xl font-bold">{{ calls_this_week }}</div>
+      <div class="text-xs font-medium mt-1">Calls Booked</div>
+    </a>
+    <div class="bg-teal-50 border border-teal-200 rounded-lg p-5 flex flex-col items-center justify-center text-teal-700">
+      <div class="text-3xl font-bold">{{ followups_this_week }}</div>
+      <div class="text-xs font-medium mt-1">Follow-ups Done</div>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  
+  {% if not selected_user %}
+  <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+      <h2 class="font-semibold text-gray-800">Per User Performance</h2>
+      <span class="text-xs text-gray-500">sorted by calls and leads</span>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200 text-sm text-left">
+        <thead class="bg-gray-50 text-gray-500 uppercase tracking-wider text-xs">
+          <tr>
+            <th class="px-5 py-3 font-medium">User</th>
+            <th class="px-5 py-3 font-medium text-right">Leads</th>
+            <th class="px-5 py-3 font-medium text-right">Active</th>
+            <th class="px-5 py-3 font-medium text-right">Calls</th>
+            <th class="px-5 py-3 font-medium text-right">Deals</th>
+            <th class="px-5 py-3 font-medium text-right">Overdue</th>
+            <th class="px-5 py-3 font-medium text-right">Conv %</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200 bg-white">
+          {% for row in user_stats %}
+          {% set conv = ((row.calls_booked / row.total_leads) * 100) | round(1) if row.total_leads else 0 %}
+          <tr class="hover:bg-gray-50">
+            <td class="px-5 py-3 font-medium text-gray-900">
+              <div>{{ row.user.email.split('@')[0] }}</div>
+              <div class="text-xs text-gray-400">{{ row.user.role|title }}</div>
+            </td>
+            <td class="px-5 py-3 text-right font-bold text-indigo-600">
+              <a href="{{ url_for('admin.all_leads', setter=row.user.id) }}">{{ row.total_leads }}</a>
+            </td>
+            <td class="px-5 py-3 text-right font-bold text-blue-600">{{ row.active_leads }}</td>
+            <td class="px-5 py-3 text-right font-bold text-green-600">
+              <a href="{{ url_for('admin.calls', setter=row.user.id) }}">{{ row.calls_booked }}</a>
+            </td>
+            <td class="px-5 py-3 text-right font-bold text-emerald-600">{{ row.deals_done }}</td>
+            <td class="px-5 py-3 text-right font-bold {% if row.overdue %}text-red-600{% else %}text-gray-400{% endif %}">{{ row.overdue }}</td>
+            <td class="px-5 py-3 text-right text-gray-500">{{ conv }}%</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" class="px-5 py-8 text-center text-gray-500">No users yet.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden flex flex-col {% if selected_user %}lg:col-span-2{% endif %}">
+    <div class="px-5 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+      <h2 class="font-semibold text-gray-800">Recent Activity</h2>
+      <span class="text-xs text-gray-500">Last 7 days</span>
+    </div>
+    <div class="divide-y divide-gray-200 overflow-y-auto max-h-[400px]">
+      {% for act in recent_activities %}
+      {% set diff_s = ((now - act.timestamp).total_seconds()) | int %}
+      {% if diff_s < 60 %}{% set ago = 'just now' %}
+      {% elif diff_s < 3600 %}{% set ago = (diff_s // 60)|string + 'm ago' %}
+      {% elif diff_s < 86400 %}{% set ago = (diff_s // 3600)|string + 'h ago' %}
+      {% else %}{% set ago = act.timestamp.strftime('%d %b') %}{% endif %}
+      <div class="p-4 hover:bg-gray-50 flex items-start gap-3">
+        <div class="w-16 shrink-0 text-xs font-medium text-gray-400 mt-0.5">{{ ago }}</div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm text-gray-900">
+            {% if not selected_user %}
+            <span class="font-semibold text-indigo-600">{{ act.user.email.split('@')[0] if act.user else 'System' }}</span>
+            {% endif %}
+            <span class="text-gray-600">{{ act.action }}</span>
+          </p>
+          {% if act.lead %}
+          <p class="text-xs text-gray-400 font-mono mt-0.5">@{{ act.lead.instagram_handle }}</p>
+          {% endif %}
+        </div>
+      </div>
+      {% else %}
+      <div class="p-8 text-center text-gray-500 text-sm">No activity in the past 7 days.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

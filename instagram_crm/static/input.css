@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #0A0A0F;
+  --color-surface: #111118;
+  --color-elevated: #1A1A24;
+  --color-border-subtle: #2A2A38;
+  --color-border-active: #3D3D52;
+  
+  --color-text-primary: #F0F0FF;
+  --color-text-secondary: #8888AA;
+  --color-text-tertiary: #555570;
+  
+  --color-accent-blue: #4F7EFF;
+  --color-accent-purple: #8B5CF6;
+  
+  --color-status-new: #3B82F6;
+  --color-status-messaged: #8B5CF6;
+  --color-status-replied: #F59E0B;
+  --color-status-interested: #10B981;
+  --color-status-call: #F97316;
+  
+  --color-alert-overdue: #FF4444;
+  --color-alert-today: #F59E0B;
+  --color-alert-success: #10B981;
+
+  --font-display: 'Syne', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  
+  --animate-pulse-subtle: pulse-subtle 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  
+  @keyframes pulse-subtle {
+    0%, 100% { opacity: 1; background-color: transparent; }
+    50% { opacity: 0.9; background-color: rgba(255, 68, 68, 0.05); }
+  }
+}
+
+/* Base layer overrides */
+@layer base {
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text-primary);
+    font-family: var(--font-body);
+  }
+
+  ::selection {
+    background-color: rgba(79, 126, 255, 0.3);
+    color: white;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent-blue);
+    outline-offset: 2px;
+  }
+}

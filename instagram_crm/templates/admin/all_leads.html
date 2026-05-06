@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}All Leads — ReachFlow{% endblock %}
+
+{% from "_components/macros.html" import status_badge, status_btns with context %}
+
+{% block content %}
+<div class="mb-6 flex justify-between items-center">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">All Leads</h1>
+    <p class="text-sm text-gray-500 mt-1">View every lead across the entire system</p>
+  </div>
+</div>
+
+<div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+  <div class="px-5 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+    <h2 class="font-semibold text-gray-800">Total Leads: {{ leads|length }}</h2>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200 text-sm text-left">
+      <thead class="bg-gray-50 text-gray-500 uppercase tracking-wider text-xs">
+        <tr>
+          <th class="px-5 py-3 font-medium">Handle</th>
+          <th class="px-5 py-3 font-medium">Status</th>
+          <th class="px-5 py-3 font-medium">Assigned To</th>
+          <th class="px-5 py-3 font-medium">Next Follow-up</th>
+          <th class="px-5 py-3 font-medium">Added On</th>
+          <th class="px-5 py-3 font-medium text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200 bg-white">
+        {% for lead in leads %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-5 py-3 font-medium text-gray-900">@{{ lead.instagram_handle }}</td>
+          <td class="px-5 py-3">
+            <select name="status" form="override-lead-{{ lead.id }}"
+              class="px-2 py-1.5 rounded-md border border-gray-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              {% for s in ['new_lead', 'messaged', 'replied', 'interested', 'call_booked', 'deal_done'] %}
+              <option value="{{ s }}" {% if lead.status == s %}selected{% endif %}>{{ s.replace('_', ' ').title() }}</option>
+              {% endfor %}
+            </select>
+          </td>
+          <td class="px-5 py-3 text-gray-600">
+            <select name="assigned_to" form="override-lead-{{ lead.id }}"
+              class="px-2 py-1.5 rounded-md border border-gray-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="none" {% if not lead.assigned_to %}selected{% endif %}>Unassigned</option>
+              {% for setter in setters %}
+              <option value="{{ setter.id }}" {% if lead.assigned_to == setter.id %}selected{% endif %}>
+                {{ setter.email.split('@')[0] }}
+              </option>
+              {% endfor %}
+            </select>
+          </td>
+          <td class="px-5 py-3 text-gray-600">
+            {% if lead.next_followup %}
+              {% if lead.next_followup < today %}
+                <span class="text-red-600 font-medium">{{ lead.next_followup.strftime('%b %d, %Y') }}</span>
+              {% elif lead.next_followup == today %}
+                <span class="text-yellow-600 font-medium">{{ lead.next_followup.strftime('%b %d, %Y') }}</span>
+              {% else %}
+                {{ lead.next_followup.strftime('%b %d, %Y') }}
+              {% endif %}
+            {% else %}
+              <span class="text-gray-400">&mdash;</span>
+            {% endif %}
+          </td>
+          <td class="px-5 py-3 text-gray-500 text-xs">
+            {{ lead.created_at.strftime('%b %d, %Y') }}
+          </td>
+          <td class="px-5 py-3 text-right">
+            <div class="flex items-center justify-end gap-2 whitespace-nowrap">
+              <form id="override-lead-{{ lead.id }}" method="POST" action="{{ url_for('admin.override_lead', lead_id=lead.id) }}"></form>
+              <button type="submit" form="override-lead-{{ lead.id }}" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-indigo-600 hover:bg-indigo-50 hover:text-indigo-900 font-medium">
+                Save
+              </button>
+              {{ status_btns(lead) }}
+              <a href="{{ url_for('crm.edit_lead', lead_id=lead.id) }}" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-indigo-600 hover:bg-indigo-50 hover:text-indigo-900 font-medium">Edit</a>
+              <form method="POST" action="{{ url_for('crm.delete_lead', lead_id=lead.id) }}" onsubmit="return confirm('Are you sure you want to delete this lead?');" class="inline-flex">
+                <button type="submit" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-red-600 hover:bg-red-50 hover:text-red-900 font-medium">Delete</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5" class="px-5 py-8 text-center text-gray-500">No leads in the system yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Calls Booked — ReachFlow{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">Calls Booked</h1>
+    <p class="text-sm text-gray-500 mt-1">Detailed call schedule by lead, user, date, and time</p>
+  </div>
+  <form method="GET" action="{{ url_for('admin.calls') }}" class="flex items-center gap-2">
+    <select name="setter" class="px-3 py-2 rounded-md border border-gray-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      <option value="">All users</option>
+      {% for setter in setters %}
+      <option value="{{ setter.id }}" {% if selected_setter == setter.id %}selected{% endif %}>{{ setter.email }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-semibold">Filter</button>
+  </form>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+  <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+    <div class="text-sm text-gray-500 font-medium mb-1">Total Calls</div>
+    <div class="text-3xl font-bold text-green-600">{{ calls|length }}</div>
+  </div>
+  <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+    <div class="text-sm text-gray-500 font-medium mb-1">Upcoming</div>
+    <div class="text-3xl font-bold text-indigo-600">{{ upcoming_count }}</div>
+  </div>
+  <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+    <div class="text-sm text-gray-500 font-medium mb-1">Users With Calls</div>
+    <div class="text-3xl font-bold text-blue-600">{{ call_stats|selectattr('total')|list|length }}</div>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+  <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-200 bg-gray-50">
+      <h2 class="font-semibold text-gray-800">User Call Stats</h2>
+    </div>
+    <div class="divide-y divide-gray-200">
+      {% for row in call_stats %}
+      <a href="{{ url_for('admin.calls', setter=row.user.id) }}" class="block p-4 hover:bg-gray-50">
+        <div class="font-semibold text-gray-900 truncate">{{ row.user.email }}</div>
+        <div class="mt-1 flex items-center justify-between text-sm">
+          <span class="text-gray-500">Total</span>
+          <span class="font-bold text-green-700">{{ row.total }}</span>
+        </div>
+        <div class="mt-1 flex items-center justify-between text-sm">
+          <span class="text-gray-500">Upcoming</span>
+          <span class="font-bold text-indigo-700">{{ row.upcoming }}</span>
+        </div>
+      </a>
+      {% else %}
+      <div class="p-5 text-sm text-gray-500">No setters found.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="lg:col-span-3 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+      <h2 class="font-semibold text-gray-800">Call Details</h2>
+      <a href="{{ url_for('admin.all_leads', status='call_booked') }}" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">Open Call Leads</a>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200 text-sm text-left">
+        <thead class="bg-gray-50 text-gray-500 uppercase tracking-wider text-xs">
+          <tr>
+            <th class="px-5 py-3 font-medium">Lead</th>
+            <th class="px-5 py-3 font-medium">User</th>
+            <th class="px-5 py-3 font-medium">Date</th>
+            <th class="px-5 py-3 font-medium">Time</th>
+            <th class="px-5 py-3 font-medium">Lead Status</th>
+            <th class="px-5 py-3 font-medium">Notes</th>
+            <th class="px-5 py-3 font-medium text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200 bg-white">
+          {% for call in calls %}
+          <tr class="hover:bg-gray-50">
+            <td class="px-5 py-3 font-semibold text-gray-900">@{{ call.lead.instagram_handle }}</td>
+            <td class="px-5 py-3 text-gray-700">{{ call.lead.setter.email if call.lead and call.lead.setter else 'Unassigned' }}</td>
+            <td class="px-5 py-3 text-gray-600">{{ call.call_datetime.strftime('%d %b %Y') }}</td>
+            <td class="px-5 py-3 text-gray-600">{{ call.call_datetime.strftime('%H:%M') }}</td>
+            <td class="px-5 py-3">
+              <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                {{ call.lead.status.replace('_', ' ').title() }}
+              </span>
+            </td>
+            <td class="px-5 py-3 text-gray-500 max-w-xs truncate">{{ call.lead.notes or '' }}</td>
+            <td class="px-5 py-3 text-right">
+              <a href="{{ url_for('crm.edit_lead', lead_id=call.lead.id) }}" class="text-indigo-600 hover:text-indigo-900 font-medium">Edit Lead</a>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" class="px-5 py-8 text-center text-gray-500">No calls booked yet.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

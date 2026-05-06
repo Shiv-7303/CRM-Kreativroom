@@ -1,0 +1,15 @@
+{% macro status_badge(status) %}
+  {% if status == 'new_lead' %}
+    <span class="inline-flex items-center gap-1 bg-blue-50 text-blue-700 border border-blue-200/60 px-2 py-0.5 rounded-md font-medium text-[11px] uppercase tracking-wide whitespace-nowrap"><i data-lucide="sparkles" class="w-3 h-3"></i> New</span>
+  {% elif status == 'messaged' %}
+    <span class="inline-flex items-center gap-1 bg-purple-50 text-purple-700 border border-purple-200/60 px-2 py-0.5 rounded-md font-medium text-[11px] uppercase tracking-wide whitespace-nowrap"><i data-lucide="message-circle" class="w-3 h-3"></i> Messaged</span>
+  {% elif status == 'replied' %}
+    <span class="inline-flex items-center gap-1 bg-orange-50 text-orange-700 border border-orange-200/60 px-2 py-0.5 rounded-md font-medium text-[11px] uppercase tracking-wide whitespace-nowrap"><i data-lucide="corner-up-left" class="w-3 h-3"></i> Replied</span>
+  {% elif status == 'interested' %}
+    <span class="inline-flex items-center gap-1 bg-green-50 text-green-700 border border-green-200/60 px-2 py-0.5 rounded-md font-medium text-[11px] uppercase tracking-wide whitespace-nowrap"><i data-lucide="star" class="w-3 h-3"></i> Interested</span>
+  {% elif status == 'call_booked' %}
+    <span class="inline-flex items-center gap-1 bg-yellow-50 text-yellow-700 border border-yellow-200/60 px-2 py-0.5 rounded-md font-medium text-[11px] uppercase tracking-wide whitespace-nowrap"><i data-lucide="phone" class="w-3 h-3"></i> Call Booked</span>
+  {% else %}
+    <span class="inline-flex items-center gap-1 bg-gray-50 text-gray-700 border border-gray-200/60 px-2 py-0.5 rounded-md font-medium text-[11px] uppercase tracking-wide whitespace-nowrap">{{ status }}</span>
+  {% endif %}
+{% endmacro %}

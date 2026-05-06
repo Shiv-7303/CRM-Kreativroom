@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — ReachFlow{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">
+      {% if selected_user %}Overview for {{ selected_user.email.split('@')[0] | title }}{% else %}Admin Overview{% endif %}
+    </h1>
+    <p class="text-sm text-gray-500 mt-1">
+      {% if selected_user %}Showing metrics for {{ selected_user.email }}{% else %}High-level metrics and team performance{% endif %}
+    </p>
+  </div>
+</div>
+
+{% set filter_action = url_for('admin.dashboard') %}
+{% include "_components/_user_filter.html" with context %}
+
+<!-- Quick Stats -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+  {% if not selected_user %}
+  <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+    <div class="text-sm text-gray-500 font-medium mb-1">Total Users</div>
+    <div class="text-3xl font-bold text-indigo-600">{{ total_users }}</div>
+  </div>
+  {% endif %}
+  <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+    <div class="text-sm text-gray-500 font-medium mb-1">Total Leads</div>
+    <div class="text-3xl font-bold text-blue-600">{{ total_leads }}</div>
+  </div>
+  <a href="{{ url_for('admin.calls') }}" class="block bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:border-green-300 hover:shadow-md transition">
+    <div class="text-sm text-gray-500 font-medium mb-1">Calls Booked</div>
+    <div class="text-3xl font-bold text-green-600">{{ total_calls }}</div>
+    <div class="text-xs text-green-700 mt-2">View details</div>
+  </a>
+  <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+    <div class="text-sm text-gray-500 font-medium mb-1">Deals Done</div>
+    <div class="text-3xl font-bold text-emerald-600">{{ deals_done }}</div>
+  </div>
+  <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+    <div class="text-sm text-gray-500 font-medium mb-1">Overdue</div>
+    <div class="text-3xl font-bold {% if overdue_count %}text-red-600{% else %}text-gray-400{% endif %}">{{ overdue_count }}</div>
+  </div>
+  <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+    <div class="text-sm text-gray-500 font-medium mb-1">Follow-ups Done</div>
+    <div class="text-3xl font-bold text-teal-600">{{ followups_done }}</div>
+  </div>
+  <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+    <div class="text-sm text-gray-500 font-medium mb-1">Leads Updated Today</div>
+    <div class="text-3xl font-bold text-amber-600">{{ leads_updated_today }}</div>
+  </div>
+  {% if not selected_user %}
+  <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+    <div class="text-sm text-gray-500 font-medium mb-1">Active Today</div>
+    <div class="text-3xl font-bold text-orange-600">{{ active_today }}</div>
+  </div>
+  {% endif %}
+</div>
+
+<div class="grid grid-cols-1 gap-6">
+
+  {# ── Per User Stats: ONLY show when NO user is filtered ── #}
+  {% if not selected_user %}
+  <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+      <h2 class="font-semibold text-gray-800">Per User Stats</h2>
+      <a href="{{ url_for('admin.team') }}" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">Team Details →</a>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200 text-sm text-left">
+        <thead class="bg-gray-50 text-gray-500 uppercase tracking-wider text-xs">
+          <tr>
+            <th class="px-5 py-3 font-medium">User</th>
+            <th class="px-5 py-3 font-medium">Role</th>
+            <th class="px-5 py-3 font-medium text-right">Leads</th>
+            <th class="px-5 py-3 font-medium text-right">Calls</th>
+            <th class="px-5 py-3 font-medium text-right">Deals</th>
+            <th class="px-5 py-3 font-medium">Next Call</th>
+            <th class="px-5 py-3 font-medium text-right">Last Login</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200 bg-white">
+          {% for row in user_stats %}
+          {% set u = row.user %}
+          <tr class="hover:bg-gray-50">
+            <td class="px-5 py-3 font-medium text-gray-900">{{ u.email }}</td>
+            <td class="px-5 py-3">
+              <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium {% if u.role == 'admin' %}bg-purple-100 text-purple-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+                {{ u.role|title }}
+              </span>
+            </td>
+            <td class="px-5 py-3 text-right font-semibold text-gray-900">
+              <a href="{{ url_for('admin.all_leads', setter=u.id) }}" class="text-indigo-600 hover:text-indigo-900">{{ row.total_leads }}</a>
+            </td>
+            <td class="px-5 py-3 text-right font-semibold text-green-700">
+              <a href="{{ url_for('admin.calls', setter=u.id) }}" class="hover:text-green-900">{{ row.calls_booked }}</a>
+            </td>
+            <td class="px-5 py-3 text-right font-semibold text-emerald-700">{{ row.deals_done }}</td>
+            <td class="px-5 py-3 text-gray-600">
+              {% if row.next_call %}
+                <span class="font-medium">@{{ row.next_call.lead.instagram_handle }}</span>
+                <span class="text-xs text-gray-500">{{ row.next_call.call_datetime.strftime('%d %b, %H:%M') }}</span>
+              {% else %}
+                <span class="text-gray-400">—</span>
+              {% endif %}
+            </td>
+            <td class="px-5 py-3 text-right text-gray-500">
+              {{ u.last_login.strftime('%b %d, %H:%M') if u.last_login else 'Never' }}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" class="px-5 py-8 text-center text-gray-500">No users found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── Leads Updated Today ── #}
+  <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+      <h2 class="font-semibold text-gray-800">
+        Leads Updated Today{% if selected_user %} — {{ selected_user.email.split('@')[0] | title }}{% endif %}
+        <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700">{{ leads_updated_today }}</span>
+      </h2>
+    </div>
+    <div class="divide-y divide-gray-200 overflow-y-auto max-h-[350px]">
+      {% for act in lead_updates %}
+      <div class="p-4 hover:bg-gray-50 flex items-start gap-3">
+        <div class="w-20 shrink-0">
+          <div class="text-xs font-semibold text-gray-500">{{ act.timestamp.strftime('%H:%M') }}</div>
+          <div class="text-[10px] text-gray-400">{{ act.timestamp.strftime('%d %b') }}</div>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm text-gray-900">
+            <span class="font-semibold text-indigo-600">{{ act.user.email.split('@')[0] if act.user else 'System' }}</span>
+            <span class="text-gray-600">{{ act.action }}</span>
+          </p>
+          {% if act.lead %}
+          <p class="text-xs text-gray-400 font-mono mt-0.5">@{{ act.lead.instagram_handle }}</p>
+          {% endif %}
+        </div>
+      </div>
+      {% else %}
+      <div class="p-8 text-center text-gray-500 text-sm">No leads updated today.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  {# ── Upcoming Calls ── #}
+  <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+      <h2 class="font-semibold text-gray-800">Upcoming Calls{% if selected_user %} — {{ selected_user.email.split('@')[0] | title }}{% endif %}</h2>
+      <a href="{{ url_for('admin.calls') }}" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">View All Calls</a>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200 text-sm text-left">
+        <thead class="bg-gray-50 text-gray-500 uppercase tracking-wider text-xs">
+          <tr>
+            <th class="px-5 py-3 font-medium">Lead</th>
+            {% if not selected_user %}<th class="px-5 py-3 font-medium">User</th>{% endif %}
+            <th class="px-5 py-3 font-medium">Date</th>
+            <th class="px-5 py-3 font-medium">Time</th>
+            <th class="px-5 py-3 font-medium">Status</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200 bg-white">
+          {% for call in upcoming_calls %}
+          <tr class="hover:bg-gray-50">
+            <td class="px-5 py-3 font-semibold text-gray-900">@{{ call.lead.instagram_handle }}</td>
+            {% if not selected_user %}<td class="px-5 py-3 text-gray-700">{{ call.lead.setter.email if call.lead and call.lead.setter else 'Unassigned' }}</td>{% endif %}
+            <td class="px-5 py-3 text-gray-600">{{ call.call_datetime.strftime('%d %b %Y') }}</td>
+            <td class="px-5 py-3 text-gray-600">{{ call.call_datetime.strftime('%H:%M') }}</td>
+            <td class="px-5 py-3 text-gray-600">{{ call.lead.status.replace('_', ' ').title() }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="{% if selected_user %}4{% else %}5{% endif %}" class="px-5 py-8 text-center text-gray-500">No calls booked yet.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Recent Activity -->
+  <div class="bg-white border border-gray-200 rounded-lg shadow-sm flex flex-col">
+    <div class="px-5 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+      <h2 class="font-semibold text-gray-800">Recent Activity{% if selected_user %} — {{ selected_user.email.split('@')[0] | title }}{% endif %}</h2>
+    </div>
+    <div class="divide-y divide-gray-200 overflow-y-auto max-h-[400px]">
+      {% for act in recent_activities %}
+      <div class="p-4 hover:bg-gray-50">
+        <p class="text-sm text-gray-900">
+          {% if not selected_user %}
+          <span class="font-semibold text-indigo-600">{{ act.user.email.split('@')[0] if act.user else 'System' }}</span>
+          {% endif %}
+          {{ act.action }}
+          {% if act.lead %}
+            <span class="text-gray-500 font-mono text-xs">@{{ act.lead.instagram_handle }}</span>
+          {% endif %}
+        </p>
+        <p class="text-xs text-gray-400 mt-1">{{ act.timestamp.strftime('%b %d, %H:%M') }}</p>
+      </div>
+      {% else %}
+      <div class="p-8 text-center text-gray-500 text-sm">No recent activity found.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

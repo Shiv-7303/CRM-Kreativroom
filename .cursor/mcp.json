@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "jetro": {
+      "type": "stdio",
+      "command": "C:\\Users\\shiva\\.jetro\\runtime\\node-win32-x64.exe",
+      "args": [
+        "C:\\Users\\shiva\\.jetro\\mcp-server\\index.js"
+      ],
+      "env": {
+        "JET_WORKSPACE": "c:\\Users\\shiva\\Desktop\\KreativeRoom CRM",
+        "JET_API_URL": "https://api.jetro.ai",
+        "JET_JWT": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjJiMzZhYjQxYTczOTJlMTRlNjM1ZmRlM2M2YWYwOWZlYmFhM2YyZDYiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vamV0cm8tY2RhZWYiLCJhdWQiOiJqZXRyby1jZGFlZiIsImF1dGhfdGltZSI6MTc3ODA0NzIzNiwidXNlcl9pZCI6IlNRMVg2Y2l1TDBOcXd2OGY5TzJQNk5NaVl1SDMiLCJzdWIiOiJTUTFYNmNpdUwwTnF3djhmOU8yUDZOTWlZdUgzIiwiaWF0IjoxNzc4MDQ3MjM2LCJleHAiOjE3NzgwNTA4MzYsImVtYWlsIjoic2hpdnJhajczMDNAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZW1haWwiOlsic2hpdnJhajczMDNAZ21haWwuY29tIl19LCJzaWduX2luX3Byb3ZpZGVyIjoicGFzc3dvcmQifX0.nhnEonGdEQtaImjL2ItTjRLLihpT1auHNsXaS1lcpcEm63bHQrauG5iVwzVEqYBGbIRJr73FEGMMhn3Nj53xO3ZdDWc-02SBF2mOknHNC21VP7RLEB4bjlRRlvPUzu_R-mGkje2vmQUspzvB-up5x4FSs94XVCWGpFEqXYVeiS-gGGjUbalMEuP9IXBcDRKHyah9gu9l0hXQZKXYGH6a7GSWYv-3Iwa4vErJ9GuJ5EGQFV04yjsUKgwzpQyoIbq9vdnBj5BuEO3fRw3sPw6UnU8O_kIB_lMo5I8-XEPx0i-_3aG87s9f63XLXNhO1rKQyi-VMxsYiNa8f0W8KO5W0g",
+        "PATH": "C:\\Users\\shiva\\.jetro\\runtime;C:\\Program Files\\ImageMagick-7.1.1-Q16-HDRI\\magick.exe;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\;C:\\WINDOWS\\System32\\OpenSSH\\;D:\\ffmpeg-7.1.1-essentials_build\\bin;C:\\Program Files\\dotnet\\;D:\\Git\\cmd;C:\\Program Files\\nodejs\\;C:\\ProgramData\\chocolatey\\bin;C:\\Program Files\\Docker\\Docker\\resources\\bin;C:\\Program Files\\PostgreSQL\\18\\bin;C:\\Users\\shiva\\AppData\\Local\\Programs\\Python\\Python310\\Scripts\\;C:\\Users\\shiva\\AppData\\Local\\Programs\\Python\\Python310\\;C:\\Users\\shiva\\AppData\\Local\\Microsoft\\WindowsApps;D:\\Applications\\Microsoft VS Code\\bin;C:\\Users\\shiva\\AppData\\Roaming\\npm;D:\\Antigravity\\bin;E:\\ngrok-v3-stable-windows-amd64;"
+      }
+    }
+  }
+}

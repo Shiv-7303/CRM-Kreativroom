@@ -1,0 +1,633 @@
+"""
+admin.py — Admin-only routes. Uses log_activity() from models.
+"""
+import secrets
+import string
+from collections import defaultdict
+from datetime import date, datetime, timedelta
+
+from flask import (Blueprint, abort, flash, redirect, render_template,
+                   request, url_for)
+from flask_login import current_user, login_required
+
+from sqlalchemy.orm import joinedload
+
+from models import db, Activity, Call, Lead, User, log_activity
+
+admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
+
+
+def admin_required(fn):
+    from functools import wraps
+    @wraps(fn)
+    @login_required
+    def wrapper(*args, **kwargs):
+        if not current_user.is_admin:
+            abort(403)
+        return fn(*args, **kwargs)
+    return wrapper
+
+
+STATUS_LABELS = {
+    "new_lead":    "New Lead",
+    "messaged":    "Messaged",
+    "replied":     "Replied",
+    "interested":  "Interested",
+    "call_booked": "Call Booked",
+    "deal_done":   "Deal Done",
+}
+
+
+def _user_stats():
+    today = date.today()
+    now = datetime.now()
+    rows = []
+
+    users = User.query.order_by(User.role, User.email).all()
+    for user in users:
+        total_leads = Lead.query.filter_by(assigned_to=user.id).count()
+        active_leads = (
+            Lead.query
+            .filter(Lead.assigned_to == user.id, Lead.status != "deal_done")
+            .count()
+        )
+        calls_booked = (
+            Call.query
+            .join(Lead)
+            .filter(Lead.assigned_to == user.id)
+            .count()
+        )
+        open_calls = Lead.query.filter_by(assigned_to=user.id, status="call_booked").count()
+        deals_done = Lead.query.filter_by(assigned_to=user.id, status="deal_done").count()
+        overdue = (
+            Lead.query
+            .filter(Lead.assigned_to == user.id,
+                    Lead.next_followup != None,
+                    Lead.next_followup < today,
+                    Lead.status != "call_booked",
+                    Lead.status != "deal_done")
+            .count()
+        )
+        next_call = (
+            Call.query
+            .join(Lead)
+            .filter(Lead.assigned_to == user.id, Call.call_datetime >= now)
+            .order_by(Call.call_datetime.asc())
+            .first()
+        )
+        rows.append({
+            "user": user,
+            "total_leads": total_leads,
+            "active_leads": active_leads,
+            "calls_booked": calls_booked,
+            "open_calls": open_calls,
+            "deals_done": deals_done,
+            "overdue": overdue,
+            "next_call": next_call,
+        })
+
+    rows.sort(key=lambda row: (row["calls_booked"], row["total_leads"]), reverse=True)
+    return rows
+
+
+# ── Dashboard ─────────────────────────────────────────────────────────────────
+
+@admin_bp.route("/dashboard")
+@admin_required
+def dashboard():
+    today     = date.today()
+    day_start = datetime.combine(today, datetime.min.time())
+    week_ago  = datetime.utcnow() - timedelta(days=7)
+
+    # ── User filter ───────────────────────────────────────────────────────
+    filter_users = User.query.order_by(User.email).all()
+    selected_user_id = request.args.get("user_id", type=int)
+    selected_user = None
+    if selected_user_id:
+        selected_user = db.session.get(User, selected_user_id)
+        if not selected_user:
+            selected_user_id = None          # invalid id → show all
+
+    # ── Metrics (optionally scoped to one user) ───────────────────────────
+    total_users = User.query.count()
+
+    if selected_user_id:
+        total_leads     = Lead.query.filter_by(assigned_to=selected_user_id).count()
+        total_calls     = Call.query.join(Lead).filter(Lead.assigned_to == selected_user_id).count()
+        leads_today     = Lead.query.filter(Lead.assigned_to == selected_user_id, Lead.created_at >= day_start).count()
+        calls_this_week = Call.query.join(Lead).filter(Lead.assigned_to == selected_user_id, Call.call_datetime >= week_ago).count()
+        deals_done      = Lead.query.filter_by(assigned_to=selected_user_id, status="deal_done").count()
+        overdue_count   = (
+            Lead.query
+            .filter(Lead.assigned_to == selected_user_id,
+                    Lead.next_followup != None,
+                    Lead.next_followup < today,
+                    Lead.status != "call_booked",
+                    Lead.status != "deal_done")
+            .count()
+        )
+        followups_done  = (
+            Activity.query
+            .filter(Activity.user_id == selected_user_id,
+                    Activity.action.like("Follow-up done%"))
+            .count()
+        )
+    else:
+        total_leads     = Lead.query.count()
+        total_calls     = Call.query.count()
+        leads_today     = Lead.query.filter(Lead.created_at >= day_start).count()
+        calls_this_week = Call.query.filter(Call.call_datetime >= week_ago).count()
+        deals_done      = Lead.query.filter_by(status="deal_done").count()
+        overdue_count   = (
+            Lead.query
+            .filter(Lead.next_followup != None,
+                    Lead.next_followup < today,
+                    Lead.status != "call_booked",
+                    Lead.status != "deal_done")
+            .count()
+        )
+        followups_done  = (
+            Activity.query
+            .filter(Activity.action.like("Follow-up done%"))
+            .count()
+        )
+
+    active_today = User.query.filter(User.last_login >= day_start).count()
+
+    # ── Leads updated today (status changes logged as Activity) ───────────
+    updates_query = (
+        Activity.query
+        .filter(Activity.timestamp >= day_start, Activity.lead_id != None)
+    )
+    if selected_user_id:
+        updates_query = updates_query.filter(Activity.user_id == selected_user_id)
+    leads_updated_today = updates_query.count()
+    lead_updates = (
+        updates_query
+        .order_by(Activity.timestamp.desc())
+        .limit(15).all()
+    )
+
+    # ── Recent activity ───────────────────────────────────────────────────
+    act_query = Activity.query
+    if selected_user_id:
+        act_query = act_query.filter(Activity.user_id == selected_user_id)
+    recent_activities = act_query.order_by(Activity.timestamp.desc()).limit(10).all()
+
+    users = User.query.order_by(User.last_login.desc().nullslast()).all()
+    user_stats = _user_stats()
+
+    # ── Upcoming calls ────────────────────────────────────────────────────
+    calls_query = (
+        Call.query
+        .options(joinedload(Call.lead).joinedload(Lead.setter))
+        .filter(Call.call_datetime >= datetime.now())
+    )
+    if selected_user_id:
+        calls_query = calls_query.join(Call.lead).filter(Lead.assigned_to == selected_user_id)
+    upcoming_calls = calls_query.order_by(Call.call_datetime.asc()).limit(8).all()
+
+    return render_template(
+        "admin/dashboard.html",
+        total_users=total_users,
+        total_leads=total_leads,
+        total_calls=total_calls,
+        leads_today=leads_today,
+        calls_this_week=calls_this_week,
+        active_today=active_today,
+        deals_done=deals_done,
+        overdue_count=overdue_count,
+        followups_done=followups_done,
+        leads_updated_today=leads_updated_today,
+        lead_updates=lead_updates,
+        recent_activities=recent_activities,
+        users=users,
+        user_stats=user_stats,
+        upcoming_calls=upcoming_calls,
+        filter_users=filter_users,
+        selected_user_id=selected_user_id,
+        selected_user=selected_user,
+    )
+
+
+# ── Stats Page ────────────────────────────────────────────────────────────────
+
+@admin_bp.route("/stats")
+@admin_required
+def stats():
+    week_ago = datetime.utcnow() - timedelta(days=7)
+
+    # ── User filter ───────────────────────────────────────────────────────
+    filter_users = User.query.order_by(User.email).all()
+    selected_user_id = request.args.get("user_id", type=int)
+    selected_user = None
+    if selected_user_id:
+        selected_user = db.session.get(User, selected_user_id)
+        if not selected_user:
+            selected_user_id = None
+
+    # ── All-time metrics (optionally scoped) ──────────────────────────────
+    total_users = User.query.count()
+
+    if selected_user_id:
+        total_leads  = Lead.query.filter_by(assigned_to=selected_user_id).count()
+        total_calls  = Call.query.join(Lead).filter(Lead.assigned_to == selected_user_id).count()
+    else:
+        total_leads  = Lead.query.count()
+        total_calls  = Call.query.count()
+
+    conversion = round((total_calls / total_leads) * 100, 1) if total_leads else 0
+
+    # ── This-week metrics (optionally scoped) ─────────────────────────────
+    if selected_user_id:
+        leads_this_week = Lead.query.filter(Lead.assigned_to == selected_user_id, Lead.created_at >= week_ago).count()
+        calls_this_week = Call.query.join(Lead).filter(Lead.assigned_to == selected_user_id, Call.call_datetime >= week_ago).count()
+        followups_this_week = (
+            Activity.query
+            .filter(Activity.user_id == selected_user_id,
+                    Activity.timestamp >= week_ago,
+                    Activity.action.like("Follow-up done%"))
+            .count()
+        )
+    else:
+        leads_this_week = Lead.query.filter(Lead.created_at >= week_ago).count()
+        calls_this_week = Call.query.filter(Call.call_datetime >= week_ago).count()
+        followups_this_week = (
+            Activity.query
+            .filter(Activity.timestamp >= week_ago,
+                    Activity.action.like("Follow-up done%"))
+            .count()
+        )
+
+    # Per-setter stats — one DB query each, not a full scan
+    user_stats = _user_stats()
+
+    # ── Recent activity (optionally scoped) ───────────────────────────────
+    act_query = Activity.query.filter(Activity.timestamp >= week_ago)
+    if selected_user_id:
+        act_query = act_query.filter(Activity.user_id == selected_user_id)
+    recent_activities = act_query.order_by(Activity.timestamp.desc()).limit(20).all()
+
+    return render_template(
+        "admin/stats.html",
+        total_users=total_users,
+        total_leads=total_leads,
+        total_calls=total_calls,
+        conversion=conversion,
+        leads_this_week=leads_this_week,
+        calls_this_week=calls_this_week,
+        followups_this_week=followups_this_week,
+        user_stats=user_stats,
+        recent_activities=recent_activities,
+        now=datetime.utcnow(),
+        filter_users=filter_users,
+        selected_user_id=selected_user_id,
+        selected_user=selected_user,
+    )
+
+
+# ── Team Overview ─────────────────────────────────────────────────────────────
+
+@admin_bp.route("/team")
+@admin_required
+def team():
+    today = date.today()
+    now   = datetime.now()
+    day_start = datetime.combine(today, datetime.min.time())
+    week_ago  = datetime.utcnow() - timedelta(days=7)
+
+    users = User.query.order_by(User.role, User.email).all()
+    team_rows = []
+
+    for user in users:
+        total_leads  = Lead.query.filter_by(assigned_to=user.id).count()
+        active_leads = Lead.query.filter(Lead.assigned_to == user.id, Lead.status != "deal_done").count()
+        calls_booked = Call.query.join(Lead).filter(Lead.assigned_to == user.id).count()
+        deals_done   = Lead.query.filter_by(assigned_to=user.id, status="deal_done").count()
+        overdue = (
+            Lead.query
+            .filter(Lead.assigned_to == user.id,
+                    Lead.next_followup != None,
+                    Lead.next_followup < today,
+                    Lead.status != "call_booked",
+                    Lead.status != "deal_done")
+            .count()
+        )
+        followups_done = (
+            Activity.query
+            .filter(Activity.user_id == user.id,
+                    Activity.action.like("Follow-up done%"))
+            .count()
+        )
+        leads_updated_today = (
+            Activity.query
+            .filter(Activity.user_id == user.id,
+                    Activity.timestamp >= day_start,
+                    Activity.lead_id != None)
+            .count()
+        )
+        leads_updated_week = (
+            Activity.query
+            .filter(Activity.user_id == user.id,
+                    Activity.timestamp >= week_ago,
+                    Activity.lead_id != None)
+            .count()
+        )
+        pending_followup = (
+            Lead.query
+            .filter(Lead.assigned_to == user.id,
+                    Lead.next_followup != None,
+                    Lead.next_followup >= today,
+                    Lead.status != "call_booked",
+                    Lead.status != "deal_done")
+            .count()
+        )
+        last_activity = (
+            Activity.query
+            .filter(Activity.user_id == user.id)
+            .order_by(Activity.timestamp.desc())
+            .first()
+        )
+        conv = round((calls_booked / total_leads) * 100, 1) if total_leads else 0
+
+        team_rows.append({
+            "user": user,
+            "total_leads": total_leads,
+            "active_leads": active_leads,
+            "calls_booked": calls_booked,
+            "deals_done": deals_done,
+            "overdue": overdue,
+            "followups_done": followups_done,
+            "leads_updated_today": leads_updated_today,
+            "leads_updated_week": leads_updated_week,
+            "pending_followup": pending_followup,
+            "last_activity": last_activity,
+            "conversion": conv,
+        })
+
+    team_rows.sort(key=lambda r: (r["calls_booked"], r["total_leads"]), reverse=True)
+
+    return render_template(
+        "admin/team.html",
+        team_rows=team_rows,
+        today=today,
+    )
+
+
+# ── Users ─────────────────────────────────────────────────────────────────────
+
+@admin_bp.route("/calls")
+@admin_required
+def calls():
+    setter_filter = request.args.get("setter", "").strip()
+    query = (
+        Call.query
+        .join(Lead)
+        .options(joinedload(Call.lead).joinedload(Lead.setter))
+    )
+
+    selected_setter = None
+    if setter_filter:
+        try:
+            selected_setter = int(setter_filter)
+            query = query.filter(Lead.assigned_to == selected_setter)
+        except ValueError:
+            selected_setter = None
+
+    calls = query.order_by(Call.call_datetime.asc()).all()
+    setters = User.query.filter_by(role="setter").order_by(User.email).all()
+
+    call_stats = []
+    for setter in setters:
+        total = Call.query.join(Lead).filter(Lead.assigned_to == setter.id).count()
+        upcoming = (
+            Call.query
+            .join(Lead)
+            .filter(Lead.assigned_to == setter.id, Call.call_datetime >= datetime.now())
+            .count()
+        )
+        call_stats.append({"user": setter, "total": total, "upcoming": upcoming})
+    call_stats.sort(key=lambda row: row["total"], reverse=True)
+
+    return render_template(
+        "admin/calls.html",
+        calls=calls,
+        setters=setters,
+        setter_filter=setter_filter,
+        selected_setter=selected_setter,
+        call_stats=call_stats,
+        upcoming_count=sum(1 for call in calls if call.call_datetime >= datetime.now()),
+        now=datetime.now(),
+    )
+
+
+@admin_bp.route("/users")
+@admin_required
+def users():
+    search    = request.args.get("q", "").strip().lower()
+    query     = User.query
+    if search:
+        query = query.filter(User.email.ilike(f"%{search}%"))
+    all_users = query.order_by(User.created_at.desc()).all()
+    return render_template("admin/users.html", users=all_users, search=search)
+
+
+@admin_bp.route("/users/create", methods=["POST"])
+@admin_required
+def add_user():
+    email = request.form.get("email", "").strip().lower()
+    role  = request.form.get("role", "setter")
+
+    if not email:
+        flash("Email is required.", "error")
+        return redirect(url_for("admin.users"))
+
+    if User.query.filter_by(email=email).first():
+        flash(f"{email} already exists.", "error")
+        return redirect(url_for("admin.users"))
+
+    if role not in ("admin", "setter"):
+        role = "setter"
+
+    alphabet     = string.ascii_letters + string.digits
+    generated_pw = "".join(secrets.choice(alphabet) for _ in range(12))
+
+    user = User(email=email, role=role)
+    user.set_password(generated_pw)
+    db.session.add(user)
+    db.session.flush()
+    log_activity(current_user.id, f"Created user {email} ({role})")
+    db.session.commit()
+
+    flash(f"User {email} created as {role}.", "success")
+    flash(f"TEMP PASSWORD for {email}: {generated_pw}", "temp_password")
+    return redirect(url_for("admin.users"))
+
+
+@admin_bp.route("/users/<int:user_id>/edit", methods=["POST"])
+@admin_required
+def edit_user(user_id):
+    user = db.session.get(User, user_id)
+    if not user:
+        flash("User not found.", "error")
+        return redirect(url_for("admin.users"))
+
+    new_email = request.form.get("email", "").strip().lower()
+    new_role  = request.form.get("role", user.role)
+
+    if new_email and new_email != user.email:
+        if User.query.filter_by(email=new_email).first():
+            flash(f"{new_email} is already taken.", "error")
+            return redirect(url_for("admin.users"))
+        user.email = new_email
+
+    if new_role in ("admin", "setter"):
+        user.role = new_role
+
+    log_activity(current_user.id, f"Edited user {user.email}")
+    db.session.commit()
+    flash("User updated.", "success")
+    return redirect(url_for("admin.users"))
+
+
+@admin_bp.route("/users/<int:user_id>/delete", methods=["POST"])
+@admin_required
+def delete_user(user_id):
+    if user_id == current_user.id:
+        flash("You cannot delete your own account.", "error")
+        return redirect(url_for("admin.users"))
+
+    user = db.session.get(User, user_id)
+    if not user:
+        flash("User not found.", "error")
+        return redirect(url_for("admin.users"))
+
+    email = user.email
+    log_activity(current_user.id, f"Deleted user {email}")
+    db.session.delete(user)
+    db.session.commit()
+    flash(f"{email} deleted.", "info")
+    return redirect(url_for("admin.users"))
+
+
+@admin_bp.route("/users/<int:user_id>/reset-password", methods=["POST"])
+@admin_required
+def reset_password(user_id):
+    user = db.session.get(User, user_id)
+    if not user:
+        flash("User not found.", "error")
+        return redirect(url_for("admin.users"))
+
+    alphabet = string.ascii_letters + string.digits
+    temp_pw  = "".join(secrets.choice(alphabet) for _ in range(12))
+    user.set_password(temp_pw)
+    log_activity(current_user.id, f"Reset password for {user.email}")
+    db.session.commit()
+
+    flash(f"TEMP PASSWORD for {user.email}: {temp_pw}", "temp_password")
+    return redirect(url_for("admin.users"))
+
+
+# ── All Leads ─────────────────────────────────────────────────────────────────
+
+@admin_bp.route("/leads")
+@admin_required
+def all_leads():
+    status_filter = request.args.get("status", "").strip()
+    setter_filter = request.args.get("setter", "").strip()
+
+    query = Lead.query
+    if status_filter and status_filter in Lead.STATUSES:
+        query = query.filter_by(status=status_filter)
+    if setter_filter:
+        try:
+            query = query.filter_by(assigned_to=int(setter_filter))
+        except ValueError:
+            pass
+
+    leads   = query.options(joinedload(Lead.setter), joinedload(Lead.call)).order_by(Lead.created_at.desc()).all()
+    setters = User.query.order_by(User.email).all()
+
+    setter_stats = defaultdict(lambda: {"total": 0, "calls": 0})
+    for lead in Lead.query.all():
+        if lead.assigned_to:
+            setter_stats[lead.assigned_to]["total"] += 1
+            if lead.status == "call_booked":
+                setter_stats[lead.assigned_to]["calls"] += 1
+
+    return render_template(
+        "admin/all_leads.html",
+        leads=leads,
+        setters=setters,
+        status_filter=status_filter,
+        setter_filter=setter_filter,
+        STATUS_LABELS=STATUS_LABELS,
+        setter_stats=setter_stats,
+        today=date.today(),
+    )
+
+
+@admin_bp.route("/leads/<int:lead_id>/deal-done", methods=["POST"])
+@admin_required
+def mark_deal_done(lead_id):
+    lead = db.session.get(Lead, lead_id)
+    if not lead:
+        flash("Lead not found.", "error")
+        return redirect(url_for("admin.all_leads"))
+
+    if lead.status != "call_booked":
+        flash("Can only mark Deal Done from Call Booked state.", "error")
+        return redirect(url_for("admin.all_leads"))
+
+    lead.status = "deal_done"
+    log_activity(current_user.id, "Deal Closed", lead.id)
+    db.session.commit()
+    flash(f"@{lead.instagram_handle} marked as Deal Done!", "success")
+    return redirect(url_for("admin.all_leads"))
+
+
+@admin_bp.route("/leads/<int:lead_id>/override", methods=["POST"])
+@admin_required
+def override_lead(lead_id):
+    lead = db.session.get(Lead, lead_id)
+    if not lead:
+        flash("Lead not found.", "error")
+        return redirect(url_for("admin.all_leads"))
+
+    new_status = request.form.get("status", "").strip()
+    new_setter = request.form.get("assigned_to", "").strip()
+    changes    = []
+
+    if new_status and new_status != lead.status:
+        if new_status not in Lead.STATUSES:
+            flash("Invalid status.", "error")
+            return redirect(url_for("admin.all_leads"))
+        changes.append(f"{lead.status} → {new_status}")
+        lead.status = new_status
+
+    if new_setter:
+        if new_setter == "none":
+            if lead.assigned_to is not None:
+                old = lead.setter.email.split("@")[0] if lead.setter else "None"
+                changes.append(f"unassigned (was {old})")
+                lead.assigned_to = None
+        else:
+            try:
+                sid = int(new_setter)
+                if sid != lead.assigned_to:
+                    su = db.session.get(User, sid)
+                    if su:
+                        changes.append(f"assigned to {su.email.split('@')[0]}")
+                        lead.assigned_to = sid
+            except ValueError:
+                pass
+
+    if changes:
+        log_activity(current_user.id,
+                     f"Admin override: {', '.join(changes)}", lead.id)
+        db.session.commit()
+        flash(f"@{lead.instagram_handle} updated.", "success")
+    else:
+        flash("No changes made.", "info")
+
+    return redirect(url_for("admin.all_leads"))

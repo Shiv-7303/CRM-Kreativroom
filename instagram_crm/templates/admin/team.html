@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Team Overview — ReachFlow{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">Team Overview</h1>
+    <p class="text-sm text-gray-500 mt-1">Detailed performance breakdown for all users</p>
+  </div>
+</div>
+
+<div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+  <div class="px-5 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+    <h2 class="font-semibold text-gray-800">Per User Details</h2>
+    <span class="text-xs text-gray-500">As of {{ today.strftime('%d %b %Y') }}</span>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200 text-sm text-left">
+      <thead class="bg-gray-50 text-gray-500 uppercase tracking-wider text-[10px]">
+        <tr>
+          <th class="px-4 py-3 font-medium">User</th>
+          <th class="px-4 py-3 font-medium text-right">Total Leads</th>
+          <th class="px-4 py-3 font-medium text-right">Calls Booked</th>
+          <th class="px-4 py-3 font-medium text-right">Deals Done</th>
+          <th class="px-4 py-3 font-medium text-right">Conv. %</th>
+          <th class="px-4 py-3 font-medium text-right text-red-600">Overdue</th>
+          <th class="px-4 py-3 font-medium text-right text-blue-600">Pending F/U</th>
+          <th class="px-4 py-3 font-medium text-right text-teal-600">F/U Done</th>
+          <th class="px-4 py-3 font-medium text-right text-amber-600">Updates Today</th>
+          <th class="px-4 py-3 font-medium text-right">Last Activity</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200 bg-white">
+        {% for row in team_rows %}
+        {% set u = row.user %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-4 py-3 font-medium text-gray-900">
+            <div class="font-semibold">{{ u.email.split('@')[0] }}</div>
+            <div class="text-xs text-gray-500">{{ u.role|title }}</div>
+          </td>
+          <td class="px-4 py-3 text-right font-medium text-indigo-600">
+            <a href="{{ url_for('admin.all_leads', setter=u.id) }}" class="hover:underline">{{ row.total_leads }}</a>
+          </td>
+          <td class="px-4 py-3 text-right font-medium text-green-600">
+            <a href="{{ url_for('admin.calls', setter=u.id) }}" class="hover:underline">{{ row.calls_booked }}</a>
+          </td>
+          <td class="px-4 py-3 text-right font-medium text-emerald-600">{{ row.deals_done }}</td>
+          <td class="px-4 py-3 text-right text-gray-500">{{ row.conversion }}%</td>
+          
+          <td class="px-4 py-3 text-right font-bold {% if row.overdue > 0 %}text-red-600{% else %}text-gray-300{% endif %}">
+            {{ row.overdue }}
+          </td>
+          <td class="px-4 py-3 text-right font-medium text-blue-600">
+            {{ row.pending_followup }}
+          </td>
+          <td class="px-4 py-3 text-right font-medium text-teal-600">
+            {{ row.followups_done }}
+          </td>
+          
+          <td class="px-4 py-3 text-right">
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold {% if row.leads_updated_today > 0 %}bg-amber-100 text-amber-800{% else %}bg-gray-100 text-gray-500{% endif %}">
+              {{ row.leads_updated_today }}
+            </span>
+            <div class="text-[10px] text-gray-400 mt-0.5">{{ row.leads_updated_week }} this week</div>
+          </td>
+          
+          <td class="px-4 py-3 text-right text-gray-500 text-xs">
+            {% if row.last_activity %}
+              <div class="font-medium text-gray-700">{{ row.last_activity.action }}</div>
+              <div class="text-[10px]">{{ row.last_activity.timestamp.strftime('%d %b, %H:%M') }}</div>
+            {% else %}
+              <span class="text-gray-300">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="10" class="px-5 py-8 text-center text-gray-500">No users found in the system.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

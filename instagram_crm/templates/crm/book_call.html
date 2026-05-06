@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Book Call — @{{ lead.instagram_handle }}{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto">
+
+  <div class="flex items-center gap-3 mb-6">
+    <a href="{{ url_for('crm.dashboard') }}" class="text-gray-400 hover:text-gray-700 transition-colors">← Back</a>
+    <h1 class="text-2xl font-bold text-gray-900">
+      {% if lead.call %}Update Call{% else %}Book a Call{% endif %}
+    </h1>
+  </div>
+
+  <!-- Lead info -->
+  <div class="bg-indigo-50 border border-indigo-200 rounded-xl px-5 py-4 mb-6 flex items-center gap-3">
+    <div class="text-2xl">📞</div>
+    <div>
+      <div class="font-bold text-gray-900 text-lg">@{{ lead.instagram_handle }}</div>
+      {% if lead.call %}
+      <div class="text-sm text-indigo-600 font-medium">
+        Currently: {{ lead.call.call_datetime.strftime('%d %b %Y at %H:%M') }}
+      </div>
+      {% else %}
+      <div class="text-sm text-gray-500">No call scheduled yet</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+    <form method="POST" action="{{ url_for('crm.book_call', lead_id=lead.id) }}" class="space-y-5">
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label for="call_date" class="block text-sm font-semibold text-gray-700 mb-1">Date <span class="text-red-500">*</span></label>
+          <input id="call_date" name="call_date" type="date" required
+            value="{{ lead.call.call_datetime.strftime('%Y-%m-%d') if lead.call else '' }}"
+            min="{{ now.strftime('%Y-%m-%d') }}"
+            class="w-full px-4 py-2.5 rounded-lg border border-gray-300 text-sm
+                   focus:outline-none focus:ring-2 focus:ring-indigo-500 transition" />
+        </div>
+        <div>
+          <label for="call_time" class="block text-sm font-semibold text-gray-700 mb-1">Time <span class="text-red-500">*</span></label>
+          <input id="call_time" name="call_time" type="time" required
+            value="{{ lead.call.call_datetime.strftime('%H:%M') if lead.call else '' }}"
+            class="w-full px-4 py-2.5 rounded-lg border border-gray-300 text-sm
+                   focus:outline-none focus:ring-2 focus:ring-indigo-500 transition" />
+        </div>
+      </div>
+
+      <p class="text-xs text-gray-400">⚠️ Past times are rejected. All times are in your local timezone.</p>
+
+      <div class="flex items-center gap-4 pt-2">
+        <button type="submit"
+          class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2.5
+                 rounded-lg text-sm transition-colors shadow-sm">
+          {% if lead.call %}📅 Update Call{% else %}📞 Book Call{% endif %}
+        </button>
+        <a href="{{ url_for('crm.dashboard') }}" class="text-gray-500 hover:text-gray-700 text-sm font-medium">Cancel</a>
+      </div>
+
+    </form>
+  </div>
+
+  {% if lead.call %}
+  <div class="mt-4 text-center">
+    <form method="POST" action="{{ url_for('crm.cancel_call', lead_id=lead.id) }}"
+          onsubmit="return confirm('Cancel this call? Status will be restored.')">
+      <button class="text-sm text-red-500 hover:text-red-700 font-medium transition-colors">
+        🗑 Cancel this call
+      </button>
+    </form>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

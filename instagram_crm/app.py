@@ -1,0 +1,134 @@
+"""
+app.py — Flask application factory.
+"""
+import os
+from datetime import datetime
+
+from dotenv import load_dotenv
+from flask import Flask, redirect, url_for
+from flask_login import LoginManager
+
+from models import db
+
+load_dotenv()
+
+
+def create_app() -> Flask:
+    app = Flask(__name__)
+
+    # ── Config ────────────────────────────────────────────────────────────────
+    app.config["SECRET_KEY"]                  = os.environ.get("SECRET_KEY", "dev-secret-change-me")
+    app.config["SQLALCHEMY_DATABASE_URI"]     = os.environ.get("DATABASE_URL", "sqlite:///app.db")
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+    # ── Extensions ────────────────────────────────────────────────────────────
+    db.init_app(app)
+
+    login_manager = LoginManager()
+    login_manager.init_app(app)
+    login_manager.login_view         = "auth.login"
+    login_manager.login_message      = "Please log in to continue."
+    login_manager.login_message_category = "warning"
+
+    @login_manager.user_loader
+    def load_user(user_id: str):
+        from models import User
+        db.session.expire_all()
+        return db.session.get(User, int(user_id))
+
+    @app.before_request
+    def reject_stale_password_sessions():
+        from flask import flash, redirect, session, url_for
+        from flask_login import current_user, logout_user
+        from sqlalchemy import select
+        from models import User
+
+        if not current_user.is_authenticated:
+            return None
+
+        fresh_hash = db.session.execute(
+            select(User.password_hash).where(User.id == current_user.id)
+        ).scalar_one_or_none()
+        if fresh_hash is None:
+            logout_user()
+            session.pop("password_hash_snapshot", None)
+            flash("Your account is no longer available. Please contact an admin.", "warning")
+            return redirect(url_for("auth.login"))
+
+        snapshot = session.get("password_hash_snapshot")
+        if snapshot is None:
+            session["password_hash_snapshot"] = fresh_hash
+            return None
+        if snapshot == fresh_hash:
+            return None
+
+        logout_user()
+        session.pop("password_hash_snapshot", None)
+        flash("Your password was reset. Please log in again.", "warning")
+        return redirect(url_for("auth.login"))
+
+    # Inject `now` into every template
+    @app.context_processor
+    def inject_now():
+        return {"now": datetime.utcnow()}
+
+    @app.context_processor
+    def inject_overdue_count():
+        from flask_login import current_user
+        from datetime import date
+        from models import Lead
+        count = 0
+        if current_user.is_authenticated and current_user.role == "setter":
+            today = date.today()
+            count = (Lead.query
+                     .filter(Lead.assigned_to == current_user.id,
+                             Lead.next_followup != None,
+                             Lead.next_followup < today)
+                     .count())
+        return {"overdue_count": count}
+
+    @app.route("/")
+    def index():
+        from flask_login import current_user
+        if not current_user.is_authenticated:
+            return redirect(url_for("auth.login"))
+        if current_user.is_admin:
+            return redirect(url_for("admin.dashboard"))
+        return redirect(url_for("crm.dashboard"))
+
+    # ── Blueprints ────────────────────────────────────────────────────────────
+    from auth  import auth_bp
+    from admin import admin_bp
+    from crm   import crm_bp
+
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(admin_bp)
+    app.register_blueprint(crm_bp)
+
+    # ── Error handlers ─────────────────────────────────────────────────────────
+    @app.errorhandler(403)
+    def forbidden(e):
+        from flask import render_template
+        return render_template("errors/403.html"), 403
+
+    @app.errorhandler(404)
+    def not_found(e):
+        from flask import render_template
+        return render_template("errors/404.html"), 404
+
+    @app.errorhandler(500)
+    def server_error(e):
+        from flask import render_template
+        return render_template("errors/500.html"), 500
+
+    # ── Create tables ─────────────────────────────────────────────────────────
+    with app.app_context():
+        db.create_all()
+
+    return app
+
+
+app = create_app()
+
+if __name__ == "__main__":
+    app.run(debug=True)
