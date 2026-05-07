@@ -18,7 +18,7 @@
       <option value="">All Users</option>
       {% for u in filter_users %}
         <option value="{{ u.id }}" {% if selected_user_id == u.id %}selected{% endif %}>
-          {{ u.email.split('@')[0] | title }}  ({{ u.role | title }})
+          {{ u.username | title }}  ({{ u.role | title }})
         </option>
       {% endfor %}
     </select>

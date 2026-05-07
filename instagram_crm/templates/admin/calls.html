@@ -21,7 +21,7 @@
     <select name="setter" class="px-3 py-2 rounded-md border border-gray-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
       <option value="">All users</option>
       {% for setter in setters %}
-      <option value="{{ setter.id }}" {% if selected_setter == setter.id %}selected{% endif %}>{{ setter.email }}</option>
+      <option value="{{ setter.id }}" {% if selected_setter == setter.id %}selected{% endif %}>{{ setter.username }}</option>
       {% endfor %}
     </select>
     <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-semibold">Filter</button>
@@ -89,7 +89,7 @@
           {% for call in calls %}
           <tr class="hover:bg-gray-50">
             <td class="px-5 py-3 font-semibold text-gray-900">@{{ call.lead.instagram_handle }}</td>
-            <td class="px-5 py-3 text-gray-700">{{ call.lead.setter.email if call.lead and call.lead.setter else 'Unassigned' }}</td>
+            <td class="px-5 py-3 text-gray-700">{{ call.lead.setter.username if call.lead and call.lead.setter else 'Unassigned' }}</td>
             <td class="px-5 py-3 text-gray-600">{{ call.call_datetime.strftime('%d %b %Y') }}</td>
             <td class="px-5 py-3 text-gray-600">{{ call.call_datetime.strftime('%H:%M') }}</td>
             <td class="px-5 py-3">

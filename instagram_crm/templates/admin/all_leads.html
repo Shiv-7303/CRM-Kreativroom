@@ -58,7 +58,7 @@
         <select name="setter" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
           <option value="">All Setters</option>
           {% for setter in setters %}
-          <option value="{{ setter.id }}" {% if setter_filter|string == setter.id|string %}selected{% endif %}>{{ setter.email.split('@')[0] }}</option>
+          <option value="{{ setter.id }}" {% if setter_filter|string == setter.id|string %}selected{% endif %}>{{ setter.username }}</option>
           {% endfor %}
         </select>
       </div>
@@ -121,7 +121,7 @@
               <option value="none" {% if not lead.assigned_to %}selected{% endif %}>Unassigned</option>
               {% for setter in setters %}
               <option value="{{ setter.id }}" {% if lead.assigned_to == setter.id %}selected{% endif %}>
-                {{ setter.email.split('@')[0] }}
+                {{ setter.username }}
               </option>
               {% endfor %}
             </select>

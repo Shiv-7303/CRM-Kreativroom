@@ -22,7 +22,7 @@
       <select name="setter" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
         <option value="">All Setters</option>
         {% for s in setters %}
-        <option value="{{ s.id }}" {% if setter_filter|string == s.id|string %}selected{% endif %}>{{ s.email.split('@')[0] }}</option>
+        <option value="{{ s.id }}" {% if setter_filter|string == s.id|string %}selected{% endif %}>{{ s.username }}</option>
         {% endfor %}
       </select>
       <select name="sort" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
@@ -55,7 +55,7 @@
   <div class="px-5 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
     <h2 class="font-semibold text-gray-800">
       {% if selected_setter %}
-      {{ selected_setter.email.split('@')[0] }}'s Overdue Leads
+      {{ selected_setter.username }}'s Overdue Leads
       {% else %}
       All Overdue Leads
       {% endif %}
@@ -81,7 +81,7 @@
           <td class="px-5 py-3">
             <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">{{ lead.status.replace('_', ' ').title() }}</span>
           </td>
-          <td class="px-5 py-3 text-gray-600">{{ lead.setter.email.split('@')[0] if lead.setter else 'Unassigned' }}</td>
+          <td class="px-5 py-3 text-gray-600">{{ lead.setter.username if lead.setter else 'Unassigned' }}</td>
           <td class="px-5 py-3 text-red-600 font-semibold">{{ lead.next_followup.strftime('%b %d, %Y') }}</td>
           <td class="px-5 py-3">
             {% set days_overdue = (today - lead.next_followup).days %}
