@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Reports — ReachFlow{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <div class="border-b border-gray-200">
+    <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+      <a href="{{ url_for('admin.reports') }}" class="{% if request.endpoint == 'admin.reports' %}border-indigo-500 text-indigo-600{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">General Reports</a>
+      <a href="{{ url_for('admin.stats') }}" class="{% if request.endpoint == 'admin.stats' %}border-indigo-500 text-indigo-600{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Statistics</a>
+      <a href="{{ url_for('admin.funnel') }}" class="{% if request.endpoint == 'admin.funnel' %}border-indigo-500 text-indigo-600{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Conversion Funnel</a>
+      <a href="{{ url_for('admin.leaderboard') }}" class="{% if request.endpoint == 'admin.leaderboard' %}border-indigo-500 text-indigo-600{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Leaderboard</a>
+    </nav>
+  </div>
+</div>
+
+<div class="mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">Performance Reports</h1>
+    <p class="text-sm text-gray-500 mt-1">Daily and weekly performance summary</p>
+  </div>
+  <div class="flex gap-2">
+    <a href="{{ url_for('admin.reports', period='daily') }}" class="px-4 py-2 text-sm font-medium rounded-lg {% if period == 'daily' %}bg-indigo-600 text-white{% else %}border border-gray-300 text-gray-600 hover:bg-gray-50{% endif %}">Daily</a>
+    <a href="{{ url_for('admin.reports', period='weekly') }}" class="px-4 py-2 text-sm font-medium rounded-lg {% if period == 'weekly' %}bg-indigo-600 text-white{% else %}border border-gray-300 text-gray-600 hover:bg-gray-50{% endif %}">Weekly</a>
+  </div>
+</div>
+
+{% set report = daily if period == 'daily' else weekly %}
+{% set label = "Today" if period == 'daily' else "This Week" %}
+
+<!-- Summary Cards -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+  <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+    <div class="text-sm text-gray-500 font-medium mb-1">Leads Added</div>
+    <div class="text-3xl font-bold text-blue-600">{{ report.leads_added }}</div>
+    <div class="text-xs text-gray-400 mt-1">{{ label }}</div>
+  </div>
+  <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+    <div class="text-sm text-gray-500 font-medium mb-1">Calls Booked</div>
+    <div class="text-3xl font-bold text-green-600">{{ report.calls_booked }}</div>
+    <div class="text-xs text-gray-400 mt-1">{{ label }}</div>
+  </div>
+  <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+    <div class="text-sm text-gray-500 font-medium mb-1">Deals Done</div>
+    <div class="text-3xl font-bold text-emerald-600">{{ report.deals_done }}</div>
+    <div class="text-xs text-gray-400 mt-1">{{ label }}</div>
+  </div>
+  <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+    <div class="text-sm text-gray-500 font-medium mb-1">Follow-ups Done</div>
+    <div class="text-3xl font-bold text-teal-600">{{ report.followups }}</div>
+    <div class="text-xs text-gray-400 mt-1">{{ label }}</div>
+  </div>
+</div>
+
+<!-- Per-Setter Breakdown -->
+<div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+  <div class="px-5 py-4 border-b border-gray-200 bg-gray-50">
+    <h2 class="font-semibold text-gray-800">Per-Setter Performance — {{ label }}</h2>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200 text-sm text-left">
+      <thead class="bg-gray-50 text-gray-500 uppercase tracking-wider text-xs">
+        <tr>
+          <th class="px-5 py-3 font-medium">Setter</th>
+          <th class="px-5 py-3 font-medium text-right">Leads Added</th>
+          <th class="px-5 py-3 font-medium text-right">Calls Booked</th>
+          <th class="px-5 py-3 font-medium text-right">Follow-ups Done</th>
+          <th class="px-5 py-3 font-medium text-right">Call Rate</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200 bg-white">
+        {% for row in setter_daily %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-5 py-3 font-medium text-gray-900">{{ row.user.email.split('@')[0] }}</td>
+          <td class="px-5 py-3 text-right">
+            <a href="{{ url_for('admin.user_report', user_id=row.user.id, period=period) }}" class="text-blue-600 hover:text-indigo-600 font-medium">{{ row.leads_added }}</a>
+          </td>
+          <td class="px-5 py-3 text-right">
+            <a href="{{ url_for('admin.user_report', user_id=row.user.id, period=period) }}" class="text-green-600 hover:text-indigo-600 font-medium">{{ row.calls_booked }}</a>
+          </td>
+          <td class="px-5 py-3 text-right">
+            <a href="{{ url_for('admin.user_report', user_id=row.user.id, period=period) }}" class="text-teal-600 hover:text-indigo-600 font-medium">{{ row.followups }}</a>
+          </td>
+          <td class="px-5 py-3 text-right">
+            {% set rate = (((row.calls_booked / row.leads_added) * 100)|round(1)) if row.leads_added else 0 %}
+            <a href="{{ url_for('admin.user_report', user_id=row.user.id, period=period) }}" class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium {% if rate >= 50 %}bg-green-100 text-green-700{% elif rate >= 25 %}bg-yellow-100 text-yellow-700{% else %}bg-red-100 text-red-700{% endif %} hover:bg-indigo-50">
+              {{ rate }}%
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5" class="px-5 py-8 text-center text-gray-500">No setter data available.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

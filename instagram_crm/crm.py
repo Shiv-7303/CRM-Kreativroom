@@ -89,6 +89,29 @@ def dashboard():
     )
 
 
+@crm_bp.route("/pipeline")
+@setter_required
+def pipeline():
+    today = date.today()
+    now   = datetime.now()
+
+    my_leads = (
+        Lead.query
+        .filter_by(assigned_to=current_user.id)
+        .options(joinedload(Lead.call))
+        .order_by(Lead.next_followup.asc().nullslast(), Lead.created_at.desc())
+        .all()
+    )
+
+    return render_template(
+        "crm/pipeline.html",
+        all_leads=my_leads,
+        STATUS_LABELS=STATUS_LABELS,
+        today=today,
+        now=now,
+    )
+
+
 # ── Quick Add ─────────────────────────────────────────────────────────────────
 
 @crm_bp.route("/quick-add", methods=["POST"])

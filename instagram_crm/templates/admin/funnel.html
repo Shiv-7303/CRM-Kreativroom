@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Conversion Funnel — ReachFlow{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <div class="border-b border-gray-200">
+    <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+      <a href="{{ url_for('admin.reports') }}" class="{% if request.endpoint == 'admin.reports' %}border-indigo-500 text-indigo-600{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">General Reports</a>
+      <a href="{{ url_for('admin.stats') }}" class="{% if request.endpoint == 'admin.stats' %}border-indigo-500 text-indigo-600{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Statistics</a>
+      <a href="{{ url_for('admin.funnel') }}" class="{% if request.endpoint == 'admin.funnel' %}border-indigo-500 text-indigo-600{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Conversion Funnel</a>
+      <a href="{{ url_for('admin.leaderboard') }}" class="{% if request.endpoint == 'admin.leaderboard' %}border-indigo-500 text-indigo-600{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Leaderboard</a>
+    </nav>
+  </div>
+</div>
+
+<div class="mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">Conversion Funnel</h1>
+    <p class="text-sm text-gray-500 mt-1">Visual breakdown of leads at each pipeline stage</p>
+  </div>
+  <div>
+    <form method="GET" class="flex gap-2">
+      <select name="setter" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <option value="">All Setters</option>
+        {% for s in setters %}
+        <option value="{{ s.id }}" {% if setter_filter|string == s.id|string %}selected{% endif %}>{{ s.email.split('@')[0] }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">Filter</button>
+      {% if setter_filter %}<a href="{{ url_for('admin.funnel') }}" class="px-4 py-2 border border-gray-300 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50">Clear</a>{% endif %}
+    </form>
+  </div>
+</div>
+
+{% if selected_setter %}
+<p class="text-sm text-indigo-600 mb-4">Showing funnel for <strong>{{ selected_setter.email.split('@')[0] }}</strong></p>
+{% endif %}
+
+<div class="space-y-2 mb-8">
+  {% for item in funnel_data %}
+  <div class="flex items-center gap-4">
+    <div class="w-32 shrink-0 text-right">
+      <div class="text-sm font-semibold text-gray-800">{{ item.label }}</div>
+      <div class="text-xs text-gray-500">{{ item.count }}</div>
+    </div>
+    <div class="flex-1">
+      <div class="h-10 rounded-md flex items-center px-3 text-sm font-medium text-white {% if loop.index <= 2 %}bg-blue-500{% elif loop.index == 3 %}bg-indigo-500{% elif loop.index == 4 %}bg-purple-500{% elif loop.index == 5 %}bg-emerald-500{% else %}bg-amber-500{% endif %}"
+            style="width: {{ item.pct if item.pct > 5 else 5 }}%">
+
+        {{ item.pct }}%
+      </div>
+    </div>
+    <div class="w-32 shrink-0">
+      {% if not loop.first and item.drop > 0 %}
+      <span class="text-xs text-red-500 font-medium">-{{ item.drop }}% drop</span>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Summary Table -->
+<div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+  <div class="px-5 py-4 border-b border-gray-200 bg-gray-50">
+    <h2 class="font-semibold text-gray-800">Funnel Details</h2>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200 text-sm text-left">
+      <thead class="bg-gray-50 text-gray-500 uppercase tracking-wider text-xs">
+        <tr>
+          <th class="px-5 py-3 font-medium">Stage</th>
+          <th class="px-5 py-3 font-medium text-right">Count</th>
+          <th class="px-5 py-3 font-medium text-right">% of Total</th>
+          <th class="px-5 py-3 font-medium text-right">Drop from Previous</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200 bg-white">
+        {% for item in funnel_data %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-5 py-3">
+            <span class="inline-flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full inline-block {% if loop.index <= 2 %}bg-blue-500{% elif loop.index == 3 %}bg-indigo-500{% elif loop.index == 4 %}bg-purple-500{% elif loop.index == 5 %}bg-emerald-500{% else %}bg-amber-500{% endif %}"></span>
+              {{ item.label }}
+            </span>
+          </td>
+          <td class="px-5 py-3 text-right font-semibold text-gray-900">{{ item.count }}</td>
+          <td class="px-5 py-3 text-right text-gray-600">{{ item.pct }}%</td>
+          <td class="px-5 py-3 text-right">
+            {% if not loop.first %}
+            <span class="{% if item.drop > 0 %}text-red-600{% else %}text-green-600{% endif %} font-medium">-{{ item.drop }}%</span>
+            {% else %}
+            <span class="text-gray-400">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

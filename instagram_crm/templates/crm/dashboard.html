@@ -4,6 +4,15 @@
 {% from "_components/macros.html" import status_badge, status_btns with context %}
 
 {% block content %}
+<div class="mb-6">
+  <div class="border-b border-gray-200">
+    <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+      <a href="{{ url_for('crm.dashboard') }}" class="{% if request.endpoint == 'crm.dashboard' %}border-indigo-500 text-indigo-600{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Action Required</a>
+      <a href="{{ url_for('crm.pipeline') }}" class="{% if request.endpoint == 'crm.pipeline' %}border-indigo-500 text-indigo-600{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">My Pipeline</a>
+    </nav>
+  </div>
+</div>
+
 <div class="mb-6 flex justify-between items-center">
   <div>
     <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
@@ -124,52 +133,4 @@
 </div>
 {% endif %}
 
-<!-- ALL LEADS Section -->
-<div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-  <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
-    <h2 class="font-semibold text-gray-800">ALL MY LEADS ({{ other_leads|length }})</h2>
-  </div>
-  <div class="overflow-x-auto">
-    <table class="min-w-full divide-y divide-gray-200 text-sm text-left">
-      <thead class="bg-gray-50 text-gray-500 uppercase tracking-wider text-xs">
-        <tr>
-          <th class="px-4 py-3 font-medium">Handle</th>
-          <th class="px-4 py-3 font-medium">Status</th>
-          <th class="px-4 py-3 font-medium">Next Follow-up</th>
-          <th class="px-4 py-3 font-medium">Notes</th>
-          <th class="px-4 py-3 font-medium text-right">Actions</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-gray-200 bg-white">
-        {% for lead in other_leads %}
-        <tr class="hover:bg-gray-50">
-          <td class="px-4 py-3 font-medium text-gray-900">@{{ lead.instagram_handle }}</td>
-          <td class="px-4 py-3">{{ status_badge(lead.status) }}</td>
-          <td class="px-4 py-3 text-gray-600">
-            {% if lead.next_followup %}
-              {{ lead.next_followup.strftime('%b %d, %Y') }}
-            {% else %}
-              <span class="text-gray-400">&mdash;</span>
-            {% endif %}
-          </td>
-          <td class="px-4 py-3 text-gray-500 max-w-xs truncate">{{ lead.notes or '' }}</td>
-          <td class="px-4 py-3 text-right">
-            <div class="flex items-center justify-end gap-2 whitespace-nowrap">
-              {{ status_btns(lead) }}
-              <a href="{{ url_for('crm.edit_lead', lead_id=lead.id) }}" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-indigo-600 hover:bg-indigo-50 hover:text-indigo-900 font-medium">Edit</a>
-              <form method="POST" action="{{ url_for('crm.delete_lead', lead_id=lead.id) }}" onsubmit="return confirm('Are you sure you want to delete this lead?');" class="inline-flex">
-                <button type="submit" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-red-600 hover:bg-red-50 hover:text-red-900 font-medium">Delete</button>
-              </form>
-            </div>
-          </td>
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="5" class="px-4 py-8 text-center text-gray-500">No other leads found. Add a lead to get started.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
 {% endblock %}

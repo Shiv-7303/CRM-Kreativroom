@@ -2,6 +2,15 @@
 {% block title %}Manage Users — ReachFlow{% endblock %}
 
 {% block content %}
+<div class="mb-6">
+  <div class="border-b border-gray-200">
+    <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+      <a href="{{ url_for('admin.team') }}" class="{% if request.endpoint == 'admin.team' %}border-indigo-500 text-indigo-600{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Performance Overview</a>
+      <a href="{{ url_for('admin.users') }}" class="{% if request.endpoint == 'admin.users' %}border-indigo-500 text-indigo-600{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">User Management</a>
+    </nav>
+  </div>
+</div>
+
 <div class="mb-6 flex justify-between items-center flex-wrap gap-4">
   <div>
     <h1 class="text-2xl font-bold text-gray-900">Manage Team</h1>

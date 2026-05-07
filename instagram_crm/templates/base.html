@@ -20,11 +20,9 @@
           <div class="hidden md:flex md:ml-10 md:space-x-8">
             {% if current_user.is_admin %}
               <a href="{{ url_for('admin.dashboard') }}" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md font-medium">Dashboard</a>
-              <a href="{{ url_for('admin.users') }}" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md font-medium">Users</a>
+              <a href="{{ url_for('admin.all_leads') }}" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md font-medium">Leads</a>
               <a href="{{ url_for('admin.team') }}" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md font-medium">Team</a>
-              <a href="{{ url_for('admin.all_leads') }}" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md font-medium">All Leads</a>
-              <a href="{{ url_for('admin.calls') }}" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md font-medium">Calls</a>
-              <a href="{{ url_for('admin.stats') }}" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md font-medium">Stats</a>
+              <a href="{{ url_for('admin.reports') }}" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md font-medium">Analytics</a>
             {% else %}
               <a href="{{ url_for('crm.dashboard') }}" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md font-medium">My Leads</a>
             {% endif %}
@@ -44,11 +42,9 @@
   <div class="md:hidden bg-white border-b border-gray-200 px-4 py-3 flex space-x-4 overflow-x-auto">
     {% if current_user.is_admin %}
       <a href="{{ url_for('admin.dashboard') }}" class="text-gray-600 font-medium text-sm">Dashboard</a>
-      <a href="{{ url_for('admin.users') }}" class="text-gray-600 font-medium text-sm">Users</a>
-      <a href="{{ url_for('admin.team') }}" class="text-gray-600 font-medium text-sm">Team</a>
       <a href="{{ url_for('admin.all_leads') }}" class="text-gray-600 font-medium text-sm">Leads</a>
-      <a href="{{ url_for('admin.calls') }}" class="text-gray-600 font-medium text-sm">Calls</a>
-      <a href="{{ url_for('admin.stats') }}" class="text-gray-600 font-medium text-sm">Stats</a>
+      <a href="{{ url_for('admin.team') }}" class="text-gray-600 font-medium text-sm">Team</a>
+      <a href="{{ url_for('admin.reports') }}" class="text-gray-600 font-medium text-sm">Analytics</a>
     {% else %}
       <a href="{{ url_for('crm.dashboard') }}" class="text-gray-600 font-medium text-sm">My Leads</a>
     {% endif %}

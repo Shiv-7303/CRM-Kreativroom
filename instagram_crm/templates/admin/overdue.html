@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Overdue Pipeline — ReachFlow{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <div class="border-b border-gray-200">
+    <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+      <a href="{{ url_for('admin.all_leads') }}" class="{% if request.endpoint == 'admin.all_leads' %}border-indigo-500 text-indigo-600{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">All Leads</a>
+      <a href="{{ url_for('admin.overdue') }}" class="{% if request.endpoint == 'admin.overdue' %}border-indigo-500 text-indigo-600{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Overdue</a>
+      <a href="{{ url_for('admin.calls') }}" class="{% if request.endpoint == 'admin.calls' %}border-indigo-500 text-indigo-600{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Calls Booked</a>
+    </nav>
+  </div>
+</div>
+
+<div class="mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">Overdue Pipeline</h1>
+    <p class="text-sm text-gray-500 mt-1">Leads with missed follow-ups that need immediate attention</p>
+  </div>
+  <div class="flex gap-2">
+    <form method="GET" class="flex gap-2 items-center">
+      <select name="setter" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <option value="">All Setters</option>
+        {% for s in setters %}
+        <option value="{{ s.id }}" {% if setter_filter|string == s.id|string %}selected{% endif %}>{{ s.email.split('@')[0] }}</option>
+        {% endfor %}
+      </select>
+      <select name="sort" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <option value="followup" {% if sort_by == 'followup' %}selected{% endif %}>Sort by Follow-up Date</option>
+        <option value="created" {% if sort_by == 'created' %}selected{% endif %}>Sort by Created Date</option>
+        <option value="setter" {% if sort_by == 'setter' %}selected{% endif %}>Sort by Setter</option>
+      </select>
+      <button type="submit" class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">Apply</button>
+      <a href="{{ url_for('admin.overdue') }}" class="px-4 py-2 border border-gray-300 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50">Clear</a>
+    </form>
+  </div>
+</div>
+
+<!-- Overdue Count Card -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+  {% for setter_name, leads_list in overdue_by_setter.items() %}
+  <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm {% if leads_list|length > 5 %}border-l-4 border-l-red-500{% elif leads_list|length > 2 %}border-l-4 border-l-yellow-500{% else %}border-l-4 border-l-green-500{% endif %}">
+    <div class="text-sm text-gray-500 font-medium">{{ setter_name }}</div>
+    <div class="text-2xl font-bold {% if leads_list|length > 5 %}text-red-600{% elif leads_list|length > 2 %}text-yellow-600{% else %}text-green-600{% endif %}">{{ leads_list|length }}</div>
+    <div class="text-xs text-gray-400">overdue leads</div>
+  </div>
+  {% endfor %}
+  {% if not overdue_by_setter %}
+  <div class="col-span-3 text-center text-gray-500 py-8">No overdue leads found. Great job!</div>
+  {% endif %}
+</div>
+
+<!-- Overdue Leads Table -->
+<div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+  <div class="px-5 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+    <h2 class="font-semibold text-gray-800">
+      {% if selected_setter %}
+      {{ selected_setter.email.split('@')[0] }}'s Overdue Leads
+      {% else %}
+      All Overdue Leads
+      {% endif %}
+      <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">{{ overdue_leads|length }}</span>
+    </h2>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200 text-sm text-left">
+      <thead class="bg-gray-50 text-gray-500 uppercase tracking-wider text-xs">
+        <tr>
+          <th class="px-5 py-3 font-medium">Handle</th>
+          <th class="px-5 py-3 font-medium">Status</th>
+          <th class="px-5 py-3 font-medium">Setter</th>
+          <th class="px-5 py-3 font-medium">Follow-up Due</th>
+          <th class="px-5 py-3 font-medium">Days Overdue</th>
+          <th class="px-5 py-3 font-medium text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200 bg-white">
+        {% for lead in overdue_leads %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-5 py-3 font-medium text-gray-900">@{{ lead.instagram_handle }}</td>
+          <td class="px-5 py-3">
+            <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">{{ lead.status.replace('_', ' ').title() }}</span>
+          </td>
+          <td class="px-5 py-3 text-gray-600">{{ lead.setter.email.split('@')[0] if lead.setter else 'Unassigned' }}</td>
+          <td class="px-5 py-3 text-red-600 font-semibold">{{ lead.next_followup.strftime('%b %d, %Y') }}</td>
+          <td class="px-5 py-3">
+            {% set days_overdue = (today - lead.next_followup).days %}
+            <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-bold {% if days_overdue > 7 %}bg-red-100 text-red-700{% elif days_overdue > 3 %}bg-yellow-100 text-yellow-700{% else %}bg-orange-100 text-orange-700{% endif %}">
+              {{ days_overdue }} day{% if days_overdue != 1 %}s{% endif %}
+            </span>
+          </td>
+          <td class="px-5 py-3 text-right">
+            <div class="flex items-center justify-end gap-2">
+              <a href="{{ url_for('crm.edit_lead', lead_id=lead.id) }}" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-indigo-600 hover:bg-indigo-50 hover:text-indigo-900 font-medium text-xs">Edit</a>
+              <a href="{{ url_for('crm.book_call', lead_id=lead.id) }}" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-green-600 hover:bg-green-50 hover:text-green-900 font-medium text-xs">Book Call</a>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="px-5 py-8 text-center text-gray-500">No overdue leads. All follow-ups are on track!</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

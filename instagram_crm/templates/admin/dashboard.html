@@ -167,20 +167,38 @@
             <th class="px-5 py-3 font-medium">Status</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-200 bg-white">
-          {% for call in upcoming_calls %}
-          <tr class="hover:bg-gray-50">
-            <td class="px-5 py-3 font-semibold text-gray-900">@{{ call.lead.instagram_handle }}</td>
-            {% if not selected_user %}<td class="px-5 py-3 text-gray-700">{{ call.lead.setter.email if call.lead and call.lead.setter else 'Unassigned' }}</td>{% endif %}
-            <td class="px-5 py-3 text-gray-600">{{ call.call_datetime.strftime('%d %b %Y') }}</td>
-            <td class="px-5 py-3 text-gray-600">{{ call.call_datetime.strftime('%H:%M') }}</td>
-            <td class="px-5 py-3 text-gray-600">{{ call.lead.status.replace('_', ' ').title() }}</td>
-          </tr>
-          {% else %}
-          <tr>
-            <td colspan="{% if selected_user %}4{% else %}5{% endif %}" class="px-5 py-8 text-center text-gray-500">No calls booked yet.</td>
-          </tr>
-          {% endfor %}
+         <tbody class="divide-y divide-gray-200 bg-white">
+           {% for call in upcoming_calls %}
+           <tr class="hover:bg-gray-50">
+             <td class="px-5 py-3 font-semibold text-gray-900">
+               {% if call.lead %}
+                 @{{ call.lead.instagram_handle }}
+               {% else %}
+                 Deleted Lead
+               {% endif %}
+             </td>
+             {% if not selected_user %}<td class="px-5 py-3 text-gray-700">
+               {% if call.lead and call.lead.setter %}
+                 {{ call.lead.setter.email }}
+               {% else %}
+                 Unassigned
+               {% endif %}
+             </td>{% endif %}
+             <td class="px-5 py-3 text-gray-600">{{ call.call_datetime.strftime('%d %b %Y') }}</td>
+             <td class="px-5 py-3 text-gray-600">{{ call.call_datetime.strftime('%H:%M') }}</td>
+             <td class="px-5 py-3 text-gray-600">
+               {% if call.lead %}
+                 {{ call.lead.status.replace('_', ' ').title() }}
+               {% else %}
+                 N/A
+               {% endif %}
+             </td>
+           </tr>
+           {% else %}
+           <tr>
+             <td colspan="{% if selected_user %}4{% else %}5{% endif %}" class="px-5 py-8 text-center text-gray-500">No calls booked yet.</td>
+           </tr>
+           {% endfor %}
         </tbody>
       </table>
     </div>
@@ -203,7 +221,7 @@
             <span class="text-gray-500 font-mono text-xs">@{{ act.lead.instagram_handle }}</span>
           {% endif %}
         </p>
-        <p class="text-xs text-gray-400 mt-1">{{ act.timestamp.strftime('%b %d, %H:%M') }}</p>
+        <p class="text-xs text-gray-400 mt-1">{{ act.timestamp.strftime('%b %d, %H:%M') }} UTC</p>
       </div>
       {% else %}
       <div class="p-8 text-center text-gray-500 text-sm">No recent activity found.</div>

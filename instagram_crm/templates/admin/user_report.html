@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block title %}User Report: {{ user.email.split('@')[0] }} — ReachFlow{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">
+      {{ user.email.split('@')[0] | title }}'s Performance Report
+    </h1>
+    <p class="text-sm text-gray-500 mt-1">{{ label }} performance details</p>
+  </div>
+  <div class="flex gap-2">
+    <a href="{{ url_for('admin.user_report', user_id=user.id, period='daily') }}" class="px-3 py-1.5 text-xs font-medium rounded-full border {% if period == 'daily' %}bg-indigo-100 border-indigo-300 text-indigo-700{% else %}bg-white border-gray-300 text-gray-600{% endif %}">Daily</a>
+    <a href="{{ url_for('admin.user_report', user_id=user.id, period='weekly') }}" class="px-3 py-1.5 text-xs font-medium rounded-full border {% if period == 'weekly' %}bg-indigo-100 border-indigo-300 text-indigo-700{% else %}bg-white border-gray-300 text-gray-600{% endif %}">Weekly</a>
+    <a href="{{ url_for('admin.reports', period=period) }}" class="px-3 py-1.5 text-xs font-medium rounded-full border bg-gray-100 border-gray-300 text-gray-600 hover:bg-gray-50">← Back to All Reports</a>
+  </div>
+</div>
+
+{% if user.role == 'setter' %}
+<!-- Key Metrics Cards -->
+<div class="grid grid-cols-2 md:grid-cols-6 gap-4 mb-8">
+  <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+    <div class="text-sm text-gray-500 font-medium mb-1">Leads Added</div>
+    <div class="text-3xl font-bold text-blue-600">{{ leads_added }}</div>
+    <div class="text-xs text-gray-400 mt-1">{{ label }}</div>
+  </div>
+  <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+    <div class="text-sm text-gray-500 font-medium mb-1">Calls Booked</div>
+    <div class="text-3xl font-bold text-green-600">{{ calls_booked }}</div>
+    <div class="text-xs text-gray-400 mt-1">{{ label }}</div>
+  </div>
+  <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+    <div class="text-sm text-gray-500 font-medium mb-1">Deals Done</div>
+    <div class="text-3xl font-bold text-emerald-600">{{ deals_done }}</div>
+    <div class="text-xs text-gray-400 mt-1">{{ label }}</div>
+  </div>
+  <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+    <div class="text-sm text-gray-500 font-medium mb-1">Follow-ups Done</div>
+    <div class="text-3xl font-bold text-teal-600">{{ followups }}</div>
+    <div class="text-xs text-gray-400 mt-1">{{ label }}</div>
+  </div>
+  <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+    <div class="text-sm text-gray-500 font-medium mb-1">Conversion Rate</div>
+    <div class="text-3xl font-bold {% if conversion >= 50 %}text-green-600{% elif conversion >= 25 %}text-yellow-600{% else %}text-red-600{% endif %}">
+      {{ conversion }}%
+    </div>
+    <div class="text-xs text-gray-400 mt-1">Calls ÷ Leads</div>
+  </div>
+  <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+    <div class="text-sm text-gray-500 font-medium mb-1">Deal Rate</div>
+    <div class="text-3xl font-bold {% if deal_rate >= 30 %}text-green-600{% elif deal_rate >= 15 %}text-yellow-600{% else %}text-red-600{% endif %}">
+      {{ deal_rate }}%
+    </div>
+    <div class="text-xs text-gray-400 mt-1">Deals ÷ Leads</div>
+  </div>
+  <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+    <div class="text-sm text-gray-500 font-medium mb-1">Overdue Leads</div>
+    <div class="text-3xl font-bold {% if overdue > 5 %}text-red-600{% elif overdue > 0 %}text-yellow-600{% else %}text-green-600{% endif %}">
+      {{ overdue }}</div>
+    <div class="text-xs text-gray-400 mt-1">As of today</div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Status Breakdown -->
+{% if status_breakdown %}
+<div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+  <div class="px-5 py-4 border-b border-gray-200 bg-gray-50">
+    <h2 class="font-semibold text-gray-800">Leads by Status</h2>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200 text-sm text-left">
+      <thead class="bg-gray-50 text-gray-500 uppercase tracking-wider text-xs">
+        <tr>
+          <th class="px-5 py-3 font-medium">Status</th>
+          <th class="px-5 py-3 font-medium text-right">Count</th>
+          <th class="px-5 py-3 font-medium text-right">Percentage</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200 bg-white">
+        {% for status, count in status_breakdown.items() %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-5 py-3">
+            <span class="inline-flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full inline-block 
+                {% if status == 'new_lead' %}bg-gray-200{% elif status == 'messaged' %}bg-blue-200{% elif status == 'replied' %}bg-indigo-200{% elif status == 'interested' %}bg-purple-200{% elif status == 'call_booked' %}bg-green-200{% else %}bg-emerald-200{% endif %}"></span>
+              {{ status.replace('_', ' ').title() }}
+            </span>
+          </td>
+          <td class="px-5 py-3 text-right font-semibold text-gray-900">{{ count }}</td>
+          <td class="px-5 py-3 text-right text-gray-600">
+            {{ ((count / leads_added) * 100)|round(1) if leads_added else 0 }}%
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- Recent Activity -->
+<div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+  <div class="px-5 py-4 border-b border-gray-200 bg-gray-50">
+    <h2 class="font-semibold text-gray-800">Recent Activity</h2>
+  </div>
+  <div class="divide-y divide-gray-200 overflow-y-auto max-h-[400px]">
+    {% for act in recent_activities %}
+    <div class="p-4 hover:bg-gray-50">
+      <p class="text-sm text-gray-900">
+        <span class="font-semibold text-indigo-600">{{ act.timestamp.strftime('%H:%M') }}</span>
+        {{ act.action }}
+        {% if act.lead %}
+          <span class="text-gray-500 font-mono text-xs">@{{ act.lead.instagram_handle }}</span>
+        {% endif %}
+      </p>
+      <p class="text-xs text-gray-400 mt-1">{{ act.timestamp.strftime('%b %d, %Y') }}</p>
+    </div>
+    {% else %}
+    <div class="p-8 text-center text-gray-500 text-sm">No recent activity found.</div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Setter Comparison (if viewing a setter) -->
+{% if user.role == 'setter' and setter_comparison|length > 1 %}
+<div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+  <div class="px-5 py-4 border-b border-gray-200 bg-gray-50">
+    <h2 class="font-semibold text-gray-800">How You Compare to Other Setters ({{ label }})</h2>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200 text-sm text-left">
+      <thead class="bg-gray-50 text-gray-500 uppercase tracking-wider text-xs">
+        <tr>
+          <th class="px-5 py-3 font-medium">Setter</th>
+          <th class="px-5 py-3 font-medium text-right">Leads</th>
+          <th class="px-5 py-3 font-medium text-right">Calls</th>
+          <th class="px-5 py-3 font-medium text-right">Deals</th>
+          <th class="px-5 py-3 font-medium text-right">Follow-ups</th>
+          <th class="px-5 py-3 font-medium text-right">Conv %</th>
+          <th class="px-5 py-3 font-medium text-right">Deal Rate</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200 bg-white">
+        {% for comp in setter_comparison %}
+        {% set u = comp.user %}
+        <tr class="hover:bg-gray-50 {% if u.id == user.id %}ring-2 ring-indigo-500{% endif %}">
+          <td class="px-5 py-3 font-medium text-gray-900">{{ u.email.split('@')[0] }}</td>
+          <td class="px-5 py-3 text-right font-semibold">{{ comp.leads }}</td>
+          <td class="px-5 py-3 text-right font-semibold">{{ comp.calls }}</td>
+          <td class="px-5 py-3 text-right font-semibold">{{ comp.deals }}</td>
+          <td class="px-5 py-3 text-right font-semibold">{{ comp.follows }}</td>
+          <td class="px-5 py-3 text-right text-gray-600">{{ comp.conv }}%</td>
+          <td class="px-5 py-3 text-right text-gray-600">{{ comp.deal_rate }}%</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

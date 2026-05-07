@@ -2,6 +2,17 @@
 {% block title %}Analytics — ReachFlow{% endblock %}
 
 {% block content %}
+<div class="mb-6">
+  <div class="border-b border-gray-200">
+    <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+      <a href="{{ url_for('admin.reports') }}" class="{% if request.endpoint == 'admin.reports' %}border-indigo-500 text-indigo-600{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">General Reports</a>
+      <a href="{{ url_for('admin.stats') }}" class="{% if request.endpoint == 'admin.stats' %}border-indigo-500 text-indigo-600{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Statistics</a>
+      <a href="{{ url_for('admin.funnel') }}" class="{% if request.endpoint == 'admin.funnel' %}border-indigo-500 text-indigo-600{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Conversion Funnel</a>
+      <a href="{{ url_for('admin.leaderboard') }}" class="{% if request.endpoint == 'admin.leaderboard' %}border-indigo-500 text-indigo-600{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Leaderboard</a>
+    </nav>
+  </div>
+</div>
+
 <div class="mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
   <div>
     <h1 class="text-2xl font-bold text-gray-900">
