@@ -9,3 +9,4 @@ venv/
 node_modules/
 .pytest_cache/
 pytest_output.txt
+production_cleanup/

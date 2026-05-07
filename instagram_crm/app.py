@@ -17,7 +17,11 @@ def create_app() -> Flask:
     app = Flask(__name__)
 
     # ── Config ────────────────────────────────────────────────────────────────
-    app.config["SECRET_KEY"]                  = os.environ.get("SECRET_KEY", "dev-secret-change-me")
+    app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY")
+    if not app.config["SECRET_KEY"] and app.config.get("ENV") == "production":
+        raise ValueError("No SECRET_KEY set for production environment!")
+    elif not app.config["SECRET_KEY"]:
+        app.config["SECRET_KEY"] = "dev-secret-change-me"
     app.config["SQLALCHEMY_DATABASE_URI"]     = os.environ.get("DATABASE_URL", "sqlite:///app.db")
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
