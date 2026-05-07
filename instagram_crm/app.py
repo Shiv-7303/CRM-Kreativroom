@@ -85,6 +85,11 @@ def create_app() -> Flask:
         return redirect(url_for("auth.login"))
 
     @app.context_processor
+    def inject_now():
+        from datetime import datetime
+        return {"now": datetime.utcnow()}
+
+    @app.context_processor
     def inject_overdue_count():
         from flask_login import current_user
         from datetime import date
