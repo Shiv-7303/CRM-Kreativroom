@@ -36,7 +36,7 @@ def login():
             next_page = request.args.get("next")
             return redirect(next_page) if _is_safe_next(next_page) else _role_redirect(user)
 
-        flash("Invalid email or password.", "error")
+        flash("Invalid username or password.", "error")
 
     return render_template("login.html")
 
