@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Analytics — ReachFlow{% endblock %}
+{% block title %}Analytics — Kreativroom Internal CRM{% endblock %}
 
 {% block content %}
 <div class="mb-6">
@@ -16,10 +16,10 @@
 <div class="mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
   <div>
     <h1 class="text-2xl font-bold text-gray-900">
-      {% if selected_user %}Stats for {{ selected_user.email.split('@')[0] | title }}{% else %}Performance Stats{% endif %}
+      {% if selected_user %}Stats for {{ selected_user.username | title }}{% else %}Performance Stats{% endif %}
     </h1>
     <p class="text-sm text-gray-500 mt-1">
-      {% if selected_user %}Analytics for {{ selected_user.email }} &middot; {% endif %}Last 7 days &middot; {{ now.strftime('%d %b %Y, %H:%M') }}
+      {% if selected_user %}Analytics for {{ selected_user.username }} &middot; {% endif %}Last 7 days &middot; {{ now.strftime('%d %b %Y, %H:%M') }}
     </p>
   </div>
 </div>
@@ -28,7 +28,7 @@
 {% include "_components/_user_filter.html" with context %}
 
 <div class="mb-8">
-  <h2 class="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">{% if selected_user %}All Time — {{ selected_user.email.split('@')[0] | title }}{% else %}All Time Overview{% endif %}</h2>
+  <h2 class="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">{% if selected_user %}All Time — {{ selected_user.username | title }}{% else %}All Time Overview{% endif %}</h2>
   <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
     <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-5 flex flex-col items-center justify-center text-indigo-700">
       <div class="text-3xl font-bold">{{ total_users }}</div>
@@ -50,7 +50,7 @@
 </div>
 
 <div class="mb-8">
-  <h2 class="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">{% if selected_user %}This Week — {{ selected_user.email.split('@')[0] | title }}{% else %}This Week{% endif %}</h2>
+  <h2 class="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">{% if selected_user %}This Week — {{ selected_user.username | title }}{% else %}This Week{% endif %}</h2>
   <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
     <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-5 flex flex-col items-center justify-center text-yellow-700">
       <div class="text-3xl font-bold">{{ leads_this_week }}</div>
@@ -93,7 +93,7 @@
           {% set conv = ((row.calls_booked / row.total_leads) * 100) | round(1) if row.total_leads else 0 %}
           <tr class="hover:bg-gray-50">
             <td class="px-5 py-3 font-medium text-gray-900">
-              <div>{{ row.user.email.split('@')[0] }}</div>
+              <div>{{ row.user.username }}</div>
               <div class="text-xs text-gray-400">{{ row.user.role|title }}</div>
             </td>
             <td class="px-5 py-3 text-right font-bold text-indigo-600">
@@ -135,7 +135,7 @@
         <div class="flex-1 min-w-0">
           <p class="text-sm text-gray-900">
             {% if not selected_user %}
-            <span class="font-semibold text-indigo-600">{{ act.user.email.split('@')[0] if act.user else 'System' }}</span>
+            <span class="font-semibold text-indigo-600">{{ act.user.username if act.user else 'System' }}</span>
             {% endif %}
             <span class="text-gray-600">{{ act.action }}</span>
           </p>

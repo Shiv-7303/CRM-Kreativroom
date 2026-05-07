@@ -22,7 +22,7 @@ def create_app() -> Flask:
         raise ValueError("No SECRET_KEY set for production environment!")
     elif not app.config["SECRET_KEY"]:
         app.config["SECRET_KEY"] = "dev-secret-change-me"
-    app.config["SQLALCHEMY_DATABASE_URI"]     = os.environ.get("DATABASE_URL", "sqlite:///app.db")
+    app.config["SQLALCHEMY_DATABASE_URI"]     = os.environ.get("DATABASE_URL", "sqlite:///" + os.path.join(os.path.dirname(__file__), "app.db"))
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     # ── Extensions ────────────────────────────────────────────────────────────
@@ -32,14 +32,14 @@ def create_app() -> Flask:
     with app.app_context():
         db.create_all()
         from instagram_crm.models import User
-        admin_email = "admin@kr.com"
-        admin = User.query.filter_by(email=admin_email).first()
+        admin_username = "admin"
+        admin = User.query.filter_by(username=admin_username).first()
         if not admin:
-            admin = User(email=admin_email, role="admin")
+            admin = User(username=admin_username, role="admin")
             admin.set_password(os.environ.get("ADMIN_PASSWORD", "admin@0411"))
             db.session.add(admin)
             db.session.commit()
-            print(f"Admin user {admin_email} created successfully!")
+            print(f"Admin user {admin_username} created successfully!")
 
     login_manager = LoginManager()
     login_manager.init_app(app)

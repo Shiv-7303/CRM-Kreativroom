@@ -16,7 +16,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between h-16">
         <div class="flex items-center">
-          <span class="text-xl font-bold text-indigo-600">ReachFlow</span>
+          <span class="text-xl font-bold text-indigo-600">Kreativroom Internal CRM</span>
           <div class="hidden md:flex md:ml-10 md:space-x-8">
             {% if current_user.is_admin %}
               <a href="{{ url_for('admin.dashboard') }}" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md font-medium">Dashboard</a>
@@ -29,7 +29,7 @@
           </div>
         </div>
         <div class="flex items-center space-x-4">
-          <span class="text-sm text-gray-500 hidden sm:block">{{ current_user.email }}</span>
+          <span class="text-sm text-gray-500 hidden sm:block">{{ current_user.username }}</span>
           <a href="{{ url_for('auth.logout') }}" class="text-sm font-medium text-gray-600 hover:text-red-600">Logout</a>
         </div>
       </div>

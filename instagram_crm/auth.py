@@ -21,10 +21,10 @@ def login():
         return _role_redirect(current_user)
 
     if request.method == "POST":
-        email    = request.form.get("email", "").strip().lower()
+        username = request.form.get("username", "").strip().lower()
         password = request.form.get("password", "")
 
-        user = User.query.filter_by(email=email).first()
+        user = User.query.filter_by(username=username).first()
 
         if user and user.check_password(password):
             login_user(user, remember=True)

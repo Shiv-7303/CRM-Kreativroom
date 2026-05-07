@@ -1,14 +1,14 @@
 {% extends "base.html" %}
-{% block title %}Admin Dashboard — ReachFlow{% endblock %}
+{% block title %}Admin Dashboard — Kreativroom Internal CRM{% endblock %}
 
 {% block content %}
 <div class="mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
   <div>
     <h1 class="text-2xl font-bold text-gray-900">
-      {% if selected_user %}Overview for {{ selected_user.email.split('@')[0] | title }}{% else %}Admin Overview{% endif %}
+      {% if selected_user %}Overview for {{ selected_user.username | title }}{% else %}Admin Overview{% endif %}
     </h1>
     <p class="text-sm text-gray-500 mt-1">
-      {% if selected_user %}Showing metrics for {{ selected_user.email }}{% else %}High-level metrics and team performance{% endif %}
+      {% if selected_user %}Showing metrics for {{ selected_user.username }}{% else %}High-level metrics and team performance{% endif %}
     </p>
   </div>
 </div>
@@ -123,7 +123,7 @@
   <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
     <div class="px-5 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
       <h2 class="font-semibold text-gray-800">
-        Leads Added Today{% if selected_user %} — {{ selected_user.email.split('@')[0] | title }}{% endif %}
+        Leads Added Today{% if selected_user %} — {{ selected_user.username | title }}{% endif %}
         <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700">{{ leads_added_today }}</span>
       </h2>
     </div>
@@ -136,7 +136,7 @@
         </div>
         <div class="flex-1 min-w-0">
           <p class="text-sm text-gray-900">
-            <span class="font-semibold text-indigo-600">{{ act.user.email.split('@')[0] if act.user else 'System' }}</span>
+            <span class="font-semibold text-indigo-600">{{ act.user.username if act.user else 'System' }}</span>
             <span class="text-gray-600">{{ act.action }}</span>
           </p>
           {% if act.lead %}
@@ -153,7 +153,7 @@
   {# ── Upcoming Calls ── #}
   <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
     <div class="px-5 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-      <h2 class="font-semibold text-gray-800">Upcoming Calls{% if selected_user %} — {{ selected_user.email.split('@')[0] | title }}{% endif %}</h2>
+      <h2 class="font-semibold text-gray-800">Upcoming Calls{% if selected_user %} — {{ selected_user.username | title }}{% endif %}</h2>
       <a href="{{ url_for('admin.calls') }}" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">View All Calls</a>
     </div>
     <div class="overflow-x-auto">
@@ -207,14 +207,14 @@
   <!-- Recent Activity -->
   <div class="bg-white border border-gray-200 rounded-lg shadow-sm flex flex-col">
     <div class="px-5 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-      <h2 class="font-semibold text-gray-800">Recent Activity{% if selected_user %} — {{ selected_user.email.split('@')[0] | title }}{% endif %}</h2>
+      <h2 class="font-semibold text-gray-800">Recent Activity{% if selected_user %} — {{ selected_user.username | title }}{% endif %}</h2>
     </div>
     <div class="divide-y divide-gray-200 overflow-y-auto max-h-[400px]">
       {% for act in recent_activities %}
       <div class="p-4 hover:bg-gray-50">
         <p class="text-sm text-gray-900">
           {% if not selected_user %}
-          <span class="font-semibold text-indigo-600">{{ act.user.email.split('@')[0] if act.user else 'System' }}</span>
+          <span class="font-semibold text-indigo-600">{{ act.user.username if act.user else 'System' }}</span>
           {% endif %}
           {{ act.action }}
           {% if act.lead %}

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Calls Booked — ReachFlow{% endblock %}
+{% block title %}Calls Booked — Kreativroom Internal CRM{% endblock %}
 
 {% block content %}
 <div class="mb-6">
@@ -51,7 +51,7 @@
     <div class="divide-y divide-gray-200">
       {% for row in call_stats %}
       <a href="{{ url_for('admin.calls', setter=row.user.id) }}" class="block p-4 hover:bg-gray-50">
-        <div class="font-semibold text-gray-900 truncate">{{ row.user.email }}</div>
+        <div class="font-semibold text-gray-900 truncate">{{ row.user.username }}</div>
         <div class="mt-1 flex items-center justify-between text-sm">
           <span class="text-gray-500">Total</span>
           <span class="font-bold text-green-700">{{ row.total }}</span>

@@ -44,7 +44,7 @@ def _user_stats():
     now = datetime.now()
     rows = []
 
-    users = User.query.filter(User.role != 'admin').order_by(User.email).all()
+    users = User.query.filter(User.role != 'admin').order_by(User.username).all()
     for user in users:
         total_leads = Lead.query.filter_by(assigned_to=user.id).count()
         active_leads = (
@@ -101,7 +101,7 @@ def dashboard():
     week_ago  = datetime.utcnow() - timedelta(days=7)
 
     # ── User filter ───────────────────────────────────────────────────────
-    filter_users = User.query.filter(User.role != 'admin').order_by(User.email).all()
+    filter_users = User.query.filter(User.role != 'admin').order_by(User.username).all()
     selected_user_id = request.args.get("user_id", type=int)
     selected_user = None
     if selected_user_id:
@@ -219,7 +219,7 @@ def stats():
     week_ago = datetime.utcnow() - timedelta(days=7)
 
     # ── User filter ───────────────────────────────────────────────────────
-    filter_users = User.query.filter(User.role != 'admin').order_by(User.email).all()
+    filter_users = User.query.filter(User.role != 'admin').order_by(User.username).all()
     selected_user_id = request.args.get("user_id", type=int)
     selected_user = None
     if selected_user_id:
@@ -297,7 +297,7 @@ def team():
     day_start = datetime.combine(today, datetime.min.time())
     week_ago  = datetime.utcnow() - timedelta(days=7)
 
-    users = User.query.filter(User.role != 'admin').order_by(User.email).all()
+    users = User.query.filter(User.role != 'admin').order_by(User.username).all()
     team_rows = []
 
     for user in users:
@@ -394,7 +394,7 @@ def calls():
             selected_setter = None
 
     calls = query.order_by(Call.call_datetime.asc()).all()
-    setters = User.query.filter_by(role="setter").order_by(User.email).all()
+    setters = User.query.filter_by(role="setter").order_by(User.username).all()
 
     call_stats = []
     for setter in setters:
@@ -426,7 +426,7 @@ def users():
     search    = request.args.get("q", "").strip().lower()
     query     = User.query
     if search:
-        query = query.filter(User.email.ilike(f"%{search}%"))
+        query = query.filter(User.username.ilike(f"%{search}%"))
     all_users = query.order_by(User.created_at.desc()).all()
     return render_template("admin/users.html", users=all_users, search=search)
 
@@ -434,15 +434,15 @@ def users():
 @admin_bp.route("/users/create", methods=["POST"])
 @admin_required
 def add_user():
-    email = request.form.get("email", "").strip().lower()
+    username = request.form.get("username", "").strip().lower()
     role  = request.form.get("role", "setter")
 
-    if not email:
-        flash("Email is required.", "error")
+    if not username:
+        flash("Username is required.", "error")
         return redirect(url_for("admin.users"))
 
-    if User.query.filter_by(email=email).first():
-        flash(f"{email} already exists.", "error")
+    if User.query.filter_by(username=username).first():
+        flash(f"{username} already exists.", "error")
         return redirect(url_for("admin.users"))
 
     if role not in ("admin", "setter"):
@@ -451,15 +451,15 @@ def add_user():
     alphabet     = string.ascii_letters + string.digits
     generated_pw = "".join(secrets.choice(alphabet) for _ in range(12))
 
-    user = User(email=email, role=role)
+    user = User(username=username, role=role)
     user.set_password(generated_pw)
     db.session.add(user)
     db.session.flush()
-    log_activity(current_user.id, f"Created user {email} ({role})")
+    log_activity(current_user.id, f"Created user {username} ({role})")
     db.session.commit()
 
-    flash(f"User {email} created as {role}.", "success")
-    flash(f"TEMP PASSWORD for {email}: {generated_pw}", "temp_password")
+    flash(f"User {username} created as {role}.", "success")
+    flash(f"TEMP PASSWORD for {username}: {generated_pw}", "temp_password")
     return redirect(url_for("admin.users"))
 
 
@@ -471,19 +471,19 @@ def edit_user(user_id):
         flash("User not found.", "error")
         return redirect(url_for("admin.users"))
 
-    new_email = request.form.get("email", "").strip().lower()
+    new_username = request.form.get("username", "").strip().lower()
     new_role  = request.form.get("role", user.role)
 
-    if new_email and new_email != user.email:
-        if User.query.filter_by(email=new_email).first():
-            flash(f"{new_email} is already taken.", "error")
+    if new_username and new_username != user.username:
+        if User.query.filter_by(username=new_username).first():
+            flash(f"{new_username} is already taken.", "error")
             return redirect(url_for("admin.users"))
-        user.email = new_email
+        user.username = new_username
 
     if new_role in ("admin", "setter"):
         user.role = new_role
 
-    log_activity(current_user.id, f"Edited user {user.email}")
+    log_activity(current_user.id, f"Edited user {user.username}")
     db.session.commit()
     flash("User updated.", "success")
     return redirect(url_for("admin.users"))
@@ -501,11 +501,11 @@ def delete_user(user_id):
         flash("User not found.", "error")
         return redirect(url_for("admin.users"))
 
-    email = user.email
-    log_activity(current_user.id, f"Deleted user {email}")
+    username = user.username
+    log_activity(current_user.id, f"Deleted user {username}")
     db.session.delete(user)
     db.session.commit()
-    flash(f"{email} deleted.", "info")
+    flash(f"{username} deleted.", "info")
     return redirect(url_for("admin.users"))
 
 
@@ -520,10 +520,10 @@ def reset_password(user_id):
     alphabet = string.ascii_letters + string.digits
     temp_pw  = "".join(secrets.choice(alphabet) for _ in range(12))
     user.set_password(temp_pw)
-    log_activity(current_user.id, f"Reset password for {user.email}")
+    log_activity(current_user.id, f"Reset password for {user.username}")
     db.session.commit()
 
-    flash(f"TEMP PASSWORD for {user.email}: {temp_pw}", "temp_password")
+    flash(f"TEMP PASSWORD for {user.username}: {temp_pw}", "temp_password")
     return redirect(url_for("admin.users"))
 
 
@@ -607,7 +607,7 @@ def all_leads():
             pass
 
     leads   = query.options(joinedload(Lead.setter), joinedload(Lead.call)).order_by(Lead.created_at.desc()).all()
-    setters = User.query.order_by(User.email).all()
+    setters = User.query.order_by(User.username).all()
 
     setter_stats = defaultdict(lambda: {"total": 0, "calls": 0})
     for lead in Lead.query.all():
@@ -675,7 +675,7 @@ def override_lead(lead_id):
     if new_setter:
         if new_setter == "none":
             if lead.assigned_to is not None:
-                old = lead.setter.email.split("@")[0] if lead.setter else "None"
+                old = lead.setter.username if lead.setter else "None"
                 changes.append(f"unassigned (was {old})")
                 lead.assigned_to = None
         else:
@@ -684,7 +684,7 @@ def override_lead(lead_id):
                 if sid != lead.assigned_to:
                     su = db.session.get(User, sid)
                     if su:
-                        changes.append(f"assigned to {su.email.split('@')[0]}")
+                        changes.append(f"assigned to {su.username}")
                         lead.assigned_to = sid
             except ValueError:
                 pass
@@ -734,7 +734,7 @@ def funnel():
             "drop": drop,
         })
 
-    setters = User.query.order_by(User.email).all()
+    setters = User.query.order_by(User.username).all()
     return render_template("admin/funnel.html",
         funnel_data=funnel_data, setters=setters,
         setter_filter=setter_filter, selected_setter=selected_setter)
@@ -773,11 +773,11 @@ def overdue():
         query = query.order_by(Lead.assigned_to.asc())
 
     overdue_leads = query.all()
-    setters = User.query.order_by(User.email).all()
+    setters = User.query.order_by(User.username).all()
 
     overdue_by_setter = defaultdict(list)
     for lead in overdue_leads:
-        overdue_by_setter[lead.setter.email if lead.setter else "Unassigned"].append(lead)
+        overdue_by_setter[lead.setter.username if lead.setter else "Unassigned"].append(lead)
 
     return render_template("admin/overdue.html",
         overdue_leads=overdue_leads, setters=setters,

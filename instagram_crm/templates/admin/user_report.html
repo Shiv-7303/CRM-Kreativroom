@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}User Report: {{ user.email.split('@')[0] }} — ReachFlow{% endblock %}
+{% block title %}User Report: {{ user.username }} — Kreativroom Internal CRM{% endblock %}
 
 {% block content %}
 <div class="mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
   <div>
     <h1 class="text-2xl font-bold text-gray-900">
-      {{ user.email.split('@')[0] | title }}'s Performance Report
+      {{ user.username | title }}'s Performance Report
     </h1>
     <p class="text-sm text-gray-500 mt-1">{{ label }} performance details</p>
   </div>

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Reports — ReachFlow{% endblock %}
+{% block title %}Reports — Kreativroom Internal CRM{% endblock %}
 
 {% block content %}
 <div class="mb-6">
@@ -70,7 +70,7 @@
       <tbody class="divide-y divide-gray-200 bg-white">
         {% for row in setter_daily %}
         <tr class="hover:bg-gray-50">
-          <td class="px-5 py-3 font-medium text-gray-900">{{ row.user.email.split('@')[0] }}</td>
+          <td class="px-5 py-3 font-medium text-gray-900">{{ row.user.username }}</td>
           <td class="px-5 py-3 text-right">
             <a href="{{ url_for('admin.user_report', user_id=row.user.id, period=period) }}" class="text-blue-600 hover:text-indigo-600 font-medium">{{ row.leads_added }}</a>
           </td>
