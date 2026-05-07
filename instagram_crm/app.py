@@ -114,6 +114,10 @@ def create_app() -> Flask:
     from instagram_crm.admin import admin_bp
     from instagram_crm.crm   import crm_bp
 
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(admin_bp)
+    app.register_blueprint(crm_bp)
+
     # ── Error handlers ─────────────────────────────────────────────────────────
     @app.errorhandler(403)
     def forbidden(e):
