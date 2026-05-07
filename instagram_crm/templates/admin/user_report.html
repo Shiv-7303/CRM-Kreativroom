@@ -145,7 +145,7 @@
         {% for comp in setter_comparison %}
         {% set u = comp.user %}
         <tr class="hover:bg-gray-50 {% if u.id == user.id %}ring-2 ring-indigo-500{% endif %}">
-          <td class="px-5 py-3 font-medium text-gray-900">{{ u.email.split('@')[0] }}</td>
+          <td class="px-5 py-3 font-medium text-gray-900">{{ u.username }}</td>
           <td class="px-5 py-3 text-right font-semibold">{{ comp.leads }}</td>
           <td class="px-5 py-3 text-right font-semibold">{{ comp.calls }}</td>
           <td class="px-5 py-3 text-right font-semibold">{{ comp.deals }}</td>

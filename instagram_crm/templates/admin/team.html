@@ -44,7 +44,7 @@
         {% set u = row.user %}
         <tr class="hover:bg-gray-50">
           <td class="px-4 py-3 font-medium text-gray-900">
-            <div class="font-semibold">{{ u.email.split('@')[0] }}</div>
+            <div class="font-semibold">{{ u.username }}</div>
             <div class="text-xs text-gray-500">{{ u.role|title }}</div>
           </td>
           <td class="px-4 py-3 text-right font-medium text-indigo-600">

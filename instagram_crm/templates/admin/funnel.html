@@ -23,7 +23,7 @@
       <select name="setter" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
         <option value="">All Setters</option>
         {% for s in setters %}
-        <option value="{{ s.id }}" {% if setter_filter|string == s.id|string %}selected{% endif %}>{{ s.email.split('@')[0] }}</option>
+        <option value="{{ s.id }}" {% if setter_filter|string == s.id|string %}selected{% endif %}>{{ s.username }}</option>
         {% endfor %}
       </select>
       <button type="submit" class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">Filter</button>
@@ -33,7 +33,7 @@
 </div>
 
 {% if selected_setter %}
-<p class="text-sm text-indigo-600 mb-4">Showing funnel for <strong>{{ selected_setter.email.split('@')[0] }}</strong></p>
+<p class="text-sm text-indigo-600 mb-4">Showing funnel for <strong>{{ selected_setter.username }}</strong></p>
 {% endif %}
 
 <div class="space-y-2 mb-8">
