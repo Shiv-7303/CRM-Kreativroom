@@ -8,7 +8,7 @@ from flask import (Blueprint, flash, redirect, render_template, session,
 from flask_login import current_user, login_required, login_user, logout_user
 from urllib.parse import urlsplit
 
-from models import db, User
+from instagram_crm.models import db, User
 
 auth_bp = Blueprint("auth", __name__)
 

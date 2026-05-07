@@ -13,7 +13,7 @@ from flask_login import current_user, login_required
 from sqlalchemy.orm import joinedload
 from sqlalchemy import func
 
-from models import db, Activity, Call, Lead, User, log_activity
+from instagram_crm.models import db, Activity, Call, Lead, User, log_activity
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 

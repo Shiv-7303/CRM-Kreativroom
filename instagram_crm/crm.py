@@ -10,7 +10,7 @@ from flask_login import current_user, login_required
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload
 
-from models import db, Call, Lead, log_activity
+from instagram_crm.models import db, Call, Lead, log_activity
 
 crm_bp = Blueprint("crm", __name__, url_prefix="/crm")
 
