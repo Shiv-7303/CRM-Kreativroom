@@ -6,7 +6,8 @@ services:
     rootDir: instagram_crm
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app
-    autoDeployTrigger: commit
+    autoDeploy: true
+    healthCheckPath: /healthz
     envVars:
       - key: SECRET_KEY
         generateValue: true
@@ -19,4 +20,5 @@ services:
 
 databases:
   - name: kreativroom-crm-db
+    databaseName: kreativroom_crm
     plan: free
