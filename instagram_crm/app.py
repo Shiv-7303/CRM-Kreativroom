@@ -100,6 +100,10 @@ def create_app() -> Flask:
             return redirect(url_for("admin.dashboard"))
         return redirect(url_for("crm.dashboard"))
 
+    @app.route("/healthz")
+    def healthz():
+        return {"status": "ok"}
+
     # ── Blueprints ────────────────────────────────────────────────────────────
     from auth  import auth_bp
     from admin import admin_bp

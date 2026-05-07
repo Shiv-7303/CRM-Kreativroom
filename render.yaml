@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: kreativroom-crm
+    runtime: python
+    plan: free
+    rootDir: instagram_crm
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    autoDeployTrigger: commit
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: FLASK_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: kreativroom-crm-db
+          property: connectionString
+
+databases:
+  - name: kreativroom-crm-db
+    plan: free
