@@ -99,6 +99,16 @@ def create_app() -> Flask:
                      .count())
         return {"overdue_count": count}
 
+    @app.route("/")
+    def index():
+        from flask import redirect, url_for
+        from flask_login import current_user
+        if not current_user.is_authenticated:
+            return redirect(url_for("auth.login"))
+        if current_user.is_admin:
+            return redirect(url_for("admin.dashboard"))
+        return redirect(url_for("crm.dashboard"))
+
     # ── Blueprints ────────────────────────────────────────────────────────────
     from instagram_crm.auth  import auth_bp
     from instagram_crm.admin import admin_bp
