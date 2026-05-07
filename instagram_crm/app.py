@@ -121,3 +121,6 @@ def create_app() -> Flask:
         return render_template("errors/500.html"), 500
 
     return app
+
+# Gunicorn wrapper
+app = create_app()
