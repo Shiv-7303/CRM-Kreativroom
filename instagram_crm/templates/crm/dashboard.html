@@ -18,7 +18,7 @@
     <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
     <p class="text-sm text-gray-500 mt-1">Manage your assigned leads</p>
   </div>
-  <a href="{{ url_for('crm.add_lead') }}" class="bg-indigo-600 text-white px-4 py-2 rounded-md font-medium hover:bg-indigo-700 transition-colors">
+  <a href="{{ url_for('crm.quick_add') }}" class="bg-indigo-600 text-white px-4 py-2 rounded-md font-medium hover:bg-indigo-700 transition-colors">
     + Add Lead
   </a>
 </div>
@@ -113,7 +113,7 @@
             {{ status_badge(lead.status) }}
             {% if lead.call %}
               <span class="text-sm font-medium text-indigo-700 bg-indigo-100 px-2.5 py-0.5 rounded-md">
-                {{ lead.call.call_datetime.strftime('%b %d at %H:%M') }}
+                {{ lead.call.call_datetime.strftime('%b %d at %I:%M %p') }}
               </span>
             {% endif %}
           </div>

@@ -76,7 +76,7 @@
           <td class="px-4 py-3 text-right text-gray-500 text-xs">
             {% if row.last_activity %}
               <div class="font-medium text-gray-700">{{ row.last_activity.action }}</div>
-              <div class="text-[10px]">{{ row.last_activity.timestamp.strftime('%d %b, %H:%M') }}</div>
+              <div class="text-[10px]">{{ row.last_activity.timestamp.strftime('%d %b, %I:%M %p') }}</div>
             {% else %}
               <span class="text-gray-300">—</span>
             {% endif %}

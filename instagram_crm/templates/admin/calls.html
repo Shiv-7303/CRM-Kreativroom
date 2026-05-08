@@ -91,7 +91,7 @@
             <td class="px-5 py-3 font-semibold text-gray-900">@{{ call.lead.instagram_handle }}</td>
             <td class="px-5 py-3 text-gray-700">{{ call.lead.setter.username if call.lead and call.lead.setter else 'Unassigned' }}</td>
             <td class="px-5 py-3 text-gray-600">{{ call.call_datetime.strftime('%d %b %Y') }}</td>
-            <td class="px-5 py-3 text-gray-600">{{ call.call_datetime.strftime('%H:%M') }}</td>
+            <td class="px-5 py-3 text-gray-600">{{ call.call_datetime.strftime('%I:%M %p') }}</td>
             <td class="px-5 py-3">
               <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
                 {{ call.lead.status.replace('_', ' ').title() }}

@@ -114,32 +114,39 @@ def pipeline():
 
 # ── Quick Add ─────────────────────────────────────────────────────────────────
 
-@crm_bp.route("/quick-add", methods=["POST"])
+@crm_bp.route("/quick-add", methods=["GET", "POST"])
 @setter_required
 def quick_add():
-    handle = request.form.get("instagram_handle", "").strip().lstrip("@")
-    notes  = request.form.get("notes", "").strip() or None
+    if request.method == "GET":
+        return render_template("crm/quick_add_leads.html")
 
-    if not handle:
-        flash("Handle is required.", "error")
-        return redirect(url_for("crm.dashboard"))
+    data = request.get_json()
+    if not data or "handles" not in data:
+        return {"error": "No handles provided"}, 400
 
-    if Lead.query.filter_by(instagram_handle=handle).first():
-        flash(f"@{handle} already in the system.", "error")
-        return redirect(url_for("crm.dashboard"))
+    added = 0
+    skipped = 0
+    tomorrow = date.today() + timedelta(days=1)
 
-    lead = Lead(instagram_handle=handle, status="new_lead",
-                assigned_to=current_user.id, notes=notes)
-    try:
+    for h in data["handles"]:
+        handle = h.replace("@", "").strip()
+        if not handle:
+            continue
+
+        if Lead.query.filter_by(instagram_handle=handle).first():
+            skipped += 1
+            continue
+
+        lead = Lead(instagram_handle=handle, status="messaged",
+                    assigned_to=current_user.id, next_followup=tomorrow)
         db.session.add(lead)
         db.session.flush()
-        log_activity(current_user.id, f"Created lead @{handle}", lead.id)
-        db.session.commit()
-        flash(f"@{handle} added.", "success")
-    except IntegrityError:
-        db.session.rollback()
-        flash("Handle already exists (duplicate detected).", "warning")
-    return redirect(url_for("crm.dashboard"))
+        log_activity(current_user.id, f"Created lead @{handle} via Bulk", lead.id)
+        added += 1
+
+    db.session.commit()
+    flash(f"Added: {added}, Skipped Duplicates: {skipped}", "success")
+    return {"message": "Success", "added": added, "skipped": skipped}, 200
 
 
 # ── Add Lead ──────────────────────────────────────────────────────────────────
@@ -314,7 +321,7 @@ def book_call(lead_id):
         return render_template("crm/book_call.html", lead=lead)
 
     try:
-        call_dt = datetime.strptime(f"{call_date} {call_time}", "%Y-%m-%d %H:%M")
+        call_dt = datetime.strptime(f"{call_date} {call_time}", "%Y-%m-%d %I:%M %p")
     except ValueError:
         flash("Invalid date/time format.", "error")
         return render_template("crm/book_call.html", lead=lead)
@@ -327,12 +334,12 @@ def book_call(lead_id):
     if is_update:
         lead.call.call_datetime = call_dt
         log_activity(current_user.id,
-                     f"Call rescheduled → {call_dt.strftime('%d %b %Y %H:%M')}", lead.id)
+                     f"Call rescheduled → {call_dt.strftime('%d %b %Y %I:%M %p')}", lead.id)
     else:
         lead.prev_status = lead.status          # save so cancel can restore
         db.session.add(Call(lead_id=lead.id, call_datetime=call_dt))
         log_activity(current_user.id,
-                     f"Call booked: {call_dt.strftime('%d %b %Y %H:%M')}", lead.id)
+                     f"Call booked: {call_dt.strftime('%d %b %Y %I:%M %p')}", lead.id)
 
     lead.status        = "call_booked"
     lead.next_followup = None
@@ -340,7 +347,7 @@ def book_call(lead_id):
 
     verb = "rescheduled" if is_update else "booked"
     flash(f"Call {verb} for @{lead.instagram_handle} on "
-          f"{call_dt.strftime('%d %b %Y at %H:%M')}.", "success")
+          f"{call_dt.strftime('%d %b %Y at %I:%M %p')}.", "success")
     return redirect(url_for("admin.all_leads" if current_user.is_admin else "crm.dashboard"))
 
 

@@ -99,13 +99,13 @@
             <td class="px-5 py-3 text-gray-600">
               {% if row.next_call %}
                 <span class="font-medium">@{{ row.next_call.lead.instagram_handle }}</span>
-                <span class="text-xs text-gray-500">{{ row.next_call.call_datetime.strftime('%d %b, %H:%M') }}</span>
+                <span class="text-xs text-gray-500">{{ row.next_call.call_datetime.strftime('%d %b, %I:%M %p') }}</span>
               {% else %}
                 <span class="text-gray-400">—</span>
               {% endif %}
             </td>
             <td class="px-5 py-3 text-right text-gray-500">
-              {{ u.last_login.strftime('%b %d, %H:%M') if u.last_login else 'Never' }}
+              {{ u.last_login.strftime('%b %d, %I:%M %p') if u.last_login else 'Never' }}
             </td>
           </tr>
           {% else %}
@@ -131,7 +131,7 @@
       {% for act in lead_additions %}
       <div class="p-4 hover:bg-gray-50 flex items-start gap-3">
         <div class="w-20 shrink-0">
-          <div class="text-xs font-semibold text-gray-500">{{ act.timestamp.strftime('%H:%M') }}</div>
+          <div class="text-xs font-semibold text-gray-500">{{ act.timestamp.strftime('%I:%M %p') }}</div>
           <div class="text-[10px] text-gray-400">{{ act.timestamp.strftime('%d %b') }}</div>
         </div>
         <div class="flex-1 min-w-0">
@@ -185,7 +185,7 @@
                {% endif %}
              </td>{% endif %}
              <td class="px-5 py-3 text-gray-600">{{ call.call_datetime.strftime('%d %b %Y') }}</td>
-             <td class="px-5 py-3 text-gray-600">{{ call.call_datetime.strftime('%H:%M') }}</td>
+             <td class="px-5 py-3 text-gray-600">{{ call.call_datetime.strftime('%I:%M %p') }}</td>
              <td class="px-5 py-3 text-gray-600">
                {% if call.lead %}
                  {{ call.lead.status.replace('_', ' ').title() }}
@@ -221,7 +221,7 @@
             <span class="text-gray-500 font-mono text-xs">@{{ act.lead.instagram_handle }}</span>
           {% endif %}
         </p>
-        <p class="text-xs text-gray-400 mt-1">{{ act.timestamp.strftime('%b %d, %H:%M') }} UTC</p>
+        <p class="text-xs text-gray-400 mt-1">{{ act.timestamp.strftime('%b %d, %I:%M %p') }} UTC</p>
       </div>
       {% else %}
       <div class="p-8 text-center text-gray-500 text-sm">No recent activity found.</div>

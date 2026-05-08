@@ -108,7 +108,7 @@
     {% for act in recent_activities %}
     <div class="p-4 hover:bg-gray-50">
       <p class="text-sm text-gray-900">
-        <span class="font-semibold text-indigo-600">{{ act.timestamp.strftime('%H:%M') }}</span>
+        <span class="font-semibold text-indigo-600">{{ act.timestamp.strftime('%I:%M %p') }}</span>
         {{ act.action }}
         {% if act.lead %}
           <span class="text-gray-500 font-mono text-xs">@{{ act.lead.instagram_handle }}</span>

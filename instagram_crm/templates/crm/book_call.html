@@ -18,7 +18,7 @@
       <div class="font-bold text-gray-900 text-lg">@{{ lead.instagram_handle }}</div>
       {% if lead.call %}
       <div class="text-sm text-indigo-600 font-medium">
-        Currently: {{ lead.call.call_datetime.strftime('%d %b %Y at %H:%M') }}
+        Currently: {{ lead.call.call_datetime.strftime('%d %b %Y at %I:%M %p') }}
       </div>
       {% else %}
       <div class="text-sm text-gray-500">No call scheduled yet</div>
@@ -39,23 +39,33 @@
                    focus:outline-none focus:ring-2 focus:ring-indigo-500 transition" />
         </div>
         <div>
-          <label for="call_time" class="block text-sm font-semibold text-gray-700 mb-1">Time <span class="text-red-500">*</span></label>
-          <input id="call_time" name="call_time" type="time" required
-            value="{{ lead.call.call_datetime.strftime('%H:%M') if lead.call else '' }}"
-            class="w-full px-4 py-2.5 rounded-lg border border-gray-300 text-sm
-                   focus:outline-none focus:ring-2 focus:ring-indigo-500 transition" />
+          <label for="display_time" class="block text-sm font-semibold text-gray-700 mb-1">Time (12-hr) <span class="text-red-500">*</span></label>
+          <div class="flex gap-2">
+            <input id="display_time" type="text" required placeholder="07:30" autocomplete="off"
+              value="{{ lead.call.call_datetime.strftime('%I:%M') if lead.call else '' }}"
+              class="w-full px-4 py-2.5 rounded-lg border border-gray-300 text-sm text-center tracking-widest font-mono
+                     focus:outline-none focus:ring-2 focus:ring-indigo-500 transition" />
+            
+            <select id="ampm" required
+              class="px-4 py-2.5 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700
+                     bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition cursor-pointer">
+              <option value="AM" {% if lead.call and lead.call.call_datetime.strftime('%p') == 'AM' %}selected{% endif %}>AM</option>
+              <option value="PM" {% if not lead.call or lead.call.call_datetime.strftime('%p') == 'PM' %}selected{% endif %}>PM</option>
+            </select>
+          </div>
+          <input type="hidden" id="call_time" name="call_time" value="{{ lead.call.call_datetime.strftime('%I:%M %p') if lead.call else '' }}">
         </div>
       </div>
-
+      
       <p class="text-xs text-gray-400">⚠️ Past times are rejected. All times are in your local timezone.</p>
 
       <div class="flex items-center gap-4 pt-2">
         <button type="submit"
           class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2.5
-                 rounded-lg text-sm transition-colors shadow-sm">
+                 rounded-lg text-sm transition-colors shadow-sm w-full sm:w-auto text-center justify-center">
           {% if lead.call %}📅 Update Call{% else %}📞 Book Call{% endif %}
         </button>
-        <a href="{{ url_for('crm.dashboard') }}" class="text-gray-500 hover:text-gray-700 text-sm font-medium">Cancel</a>
+        <a href="{{ url_for('crm.dashboard') }}" class="text-gray-500 hover:text-gray-700 text-sm font-medium hidden sm:block">Cancel</a>
       </div>
 
     </form>
@@ -65,7 +75,7 @@
   <div class="mt-4 text-center">
     <form method="POST" action="{{ url_for('crm.cancel_call', lead_id=lead.id) }}"
           onsubmit="return confirm('Cancel this call? Status will be restored.')">
-      <button class="text-sm text-red-500 hover:text-red-700 font-medium transition-colors">
+      <button class="text-sm text-red-500 hover:text-red-700 font-medium transition-colors p-2 rounded hover:bg-red-50">
         🗑 Cancel this call
       </button>
     </form>
@@ -73,4 +83,62 @@
   {% endif %}
 
 </div>
+
+<script>
+  const displayTime = document.getElementById('display_time');
+  const ampmSelect = document.getElementById('ampm');
+  const hiddenTime = document.getElementById('call_time');
+
+  function updateHiddenTime() {
+    if (displayTime.value && displayTime.value.includes(':')) {
+      hiddenTime.value = `${displayTime.value} ${ampmSelect.value}`;
+    }
+  }
+
+  displayTime.addEventListener('input', (e) => {
+    let val = e.target.value.replace(/\D/g, ''); // Keep only numbers
+    if (val.length > 4) val = val.slice(0, 4);
+
+    if (val.length > 2) {
+      val = val.slice(0, val.length - 2) + ':' + val.slice(val.length - 2);
+    }
+    
+    e.target.value = val;
+    updateHiddenTime();
+  });
+
+  displayTime.addEventListener('blur', (e) => {
+    let val = e.target.value.replace(/\D/g, '');
+    if (!val) return;
+
+    // Auto-format into HH:MM
+    if (val.length === 1 || val.length === 2) {
+      let h = parseInt(val, 10);
+      if (h > 12) h = 12;
+      if (h < 1) h = 1;
+      val = h.toString().padStart(2, '0') + ':00';
+    } else if (val.length === 3) {
+      let h = parseInt(val.slice(0, 1), 10);
+      let m = parseInt(val.slice(1), 10);
+      if (h < 1) h = 1;
+      if (m > 59) m = 59;
+      val = h.toString().padStart(2, '0') + ':' + m.toString().padStart(2, '0');
+    } else if (val.length === 4) {
+      let h = parseInt(val.slice(0, 2), 10);
+      let m = parseInt(val.slice(2), 10);
+      if (h > 12) h = 12;
+      if (h < 1) h = 1;
+      if (m > 59) m = 59;
+      val = h.toString().padStart(2, '0') + ':' + m.toString().padStart(2, '0');
+    }
+    
+    e.target.value = val;
+    updateHiddenTime();
+  });
+
+  ampmSelect.addEventListener('change', updateHiddenTime);
+
+  // Sync on load
+  updateHiddenTime();
+</script>
 {% endblock %}

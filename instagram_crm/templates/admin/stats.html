@@ -19,7 +19,7 @@
       {% if selected_user %}Stats for {{ selected_user.username | title }}{% else %}Performance Stats{% endif %}
     </h1>
     <p class="text-sm text-gray-500 mt-1">
-      {% if selected_user %}Analytics for {{ selected_user.username }} &middot; {% endif %}Last 7 days &middot; {{ now.strftime('%d %b %Y, %H:%M') }}
+      {% if selected_user %}Analytics for {{ selected_user.username }} &middot; {% endif %}Last 7 days &middot; {{ now.strftime('%d %b %Y, %I:%M %p') }}
     </p>
   </div>
 </div>
