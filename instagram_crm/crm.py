@@ -112,6 +112,37 @@ def pipeline():
     )
 
 
+from urllib.parse import urlparse
+
+def parse_instagram_url(url_or_handle: str) -> tuple[str, str | None]:
+    """Returns (username, full_url)"""
+    val = url_or_handle.strip().rstrip("/")
+    if not val:
+        return "", None
+
+    # If it's just a handle (potentially with leading @)
+    if not val.startswith("http") and "/" not in val:
+        handle = val.lstrip("@")
+        return handle, f"https://www.instagram.com/{handle}"
+
+    # If it looks like a URL
+    try:
+        if not val.startswith("http"):
+            val = "https://" + val
+        parsed = urlparse(val)
+        if "instagram.com" in parsed.netloc:
+            # path is usually /username or /username/
+            path_parts = [p for p in parsed.path.split("/") if p]
+            if path_parts:
+                handle = path_parts[0]
+                return handle, val
+    except Exception:
+        pass
+    
+    # Fallback if parsing fails but they typed something weird
+    handle = val.split("/")[-1].lstrip("@")
+    return handle, val
+
 # ── Quick Add ─────────────────────────────────────────────────────────────────
 
 @crm_bp.route("/quick-add", methods=["GET", "POST"])
@@ -129,7 +160,7 @@ def quick_add():
     tomorrow = date.today() + timedelta(days=1)
 
     for h in data["handles"]:
-        handle = h.replace("@", "").strip()
+        handle, link = parse_instagram_url(h)
         if not handle:
             continue
 
@@ -137,7 +168,7 @@ def quick_add():
             skipped += 1
             continue
 
-        lead = Lead(instagram_handle=handle, status="messaged",
+        lead = Lead(instagram_handle=handle, instagram_link=link, status="messaged",
                     assigned_to=current_user.id, next_followup=tomorrow)
         db.session.add(lead)
         db.session.flush()
@@ -199,9 +230,11 @@ def edit_lead(lead_id):
     _guard(lead)
 
     if request.method == "POST":
-        handle = request.form.get("instagram_handle", "").strip().lstrip("@")
+        raw_handle = request.form.get("instagram_handle", "")
+        handle, link = parse_instagram_url(raw_handle)
+        
         if not handle:
-            flash("Handle is required.", "error")
+            flash("Handle or valid URL is required.", "error")
             return render_template("crm/edit_lead.html", lead=lead, statuses=Lead.STATUSES)
 
         clash = Lead.query.filter(Lead.instagram_handle == handle, Lead.id != lead_id).first()
@@ -210,6 +243,8 @@ def edit_lead(lead_id):
             return render_template("crm/edit_lead.html", lead=lead, statuses=Lead.STATUSES)
 
         lead.instagram_handle = handle
+        if link:
+            lead.instagram_link = link
         lead.status           = request.form.get("status", lead.status)
         lead.last_contacted   = _parse_date(request.form.get("last_contacted"))
         lead.next_followup    = _parse_date(request.form.get("next_followup"))
@@ -313,12 +348,16 @@ def book_call(lead_id):
         return render_template("crm/book_call.html", lead=lead)
 
     # ── POST ──────────────────────────────────────────────────────────────────
+    email     = request.form.get("email", "").strip()
     call_date = request.form.get("call_date", "").strip()
     call_time = request.form.get("call_time", "").strip()
 
     if not call_date or not call_time:
         flash("Date and time are required.", "error")
         return render_template("crm/book_call.html", lead=lead)
+
+    if email:
+        lead.email = email
 
     try:
         call_dt = datetime.strptime(f"{call_date} {call_time}", "%Y-%m-%d %I:%M %p")

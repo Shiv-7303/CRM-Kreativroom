@@ -88,7 +88,13 @@
         <tbody class="divide-y divide-gray-200 bg-white">
           {% for call in calls %}
           <tr class="hover:bg-gray-50">
-            <td class="px-5 py-3 font-semibold text-gray-900">@{{ call.lead.instagram_handle }}</td>
+            <td class="px-5 py-3 font-semibold text-gray-900">
+              {% if call.lead.instagram_link %}
+                <a href="{{ call.lead.instagram_link }}" target="_blank" class="text-indigo-600 hover:text-indigo-900 hover:underline">@{{ call.lead.instagram_handle }}</a>
+              {% else %}
+                @{{ call.lead.instagram_handle }}
+              {% endif %}
+            </td>
             <td class="px-5 py-3 text-gray-700">{{ call.lead.setter.username if call.lead and call.lead.setter else 'Unassigned' }}</td>
             <td class="px-5 py-3 text-gray-600">{{ call.call_datetime.strftime('%d %b %Y') }}</td>
             <td class="px-5 py-3 text-gray-600">{{ call.call_datetime.strftime('%I:%M %p') }}</td>
@@ -100,6 +106,9 @@
             <td class="px-5 py-3 text-gray-500 max-w-xs truncate">{{ call.lead.notes or '' }}</td>
             <td class="px-5 py-3 text-right">
               <a href="{{ url_for('crm.edit_lead', lead_id=call.lead.id) }}" class="text-indigo-600 hover:text-indigo-900 font-medium">Edit Lead</a>
+              {% if call.lead.instagram_link %}
+              <a href="{{ call.lead.instagram_link }}" target="_blank" class="text-indigo-600 hover:text-indigo-900 font-medium bg-indigo-50 px-2 py-1 rounded-md ml-2">Open IG</a>
+              {% endif %}
             </td>
           </tr>
           {% else %}

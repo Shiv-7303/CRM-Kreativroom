@@ -43,6 +43,8 @@ class Lead(db.Model):
 
     id               = db.Column(db.Integer, primary_key=True)
     instagram_handle = db.Column(db.String(255), unique=True, nullable=False)
+    instagram_link   = db.Column(db.String(500), nullable=True)
+    email            = db.Column(db.String(255), nullable=True)
     status           = db.Column(db.String(50), default="new_lead", nullable=False, index=True)
     prev_status      = db.Column(db.String(50), nullable=True)   # ← restored on cancel-call
     assigned_to      = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True, index=True)
